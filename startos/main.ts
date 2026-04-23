@@ -1,6 +1,6 @@
 import { i18n } from './i18n'
 import { sdk } from './sdk'
-import { bosHomeDir, bosSavedNode, lndMount } from './utils'
+import { bosHomeDir, lndMount } from './utils'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   /**
@@ -36,35 +36,20 @@ export const main = sdk.setupMain(async ({ effects }) => {
    * BoS is a CLI tool. We run a long-lived idle daemon so that users can
    * `podman exec` into the container and invoke `bos` commands, and we
    * expose the `bos peers` check as the readiness indicator.
+   *
+   * BoS runs as root so it can read LND's root-owned 0600 admin.macaroon
+   * from the read-only LND volume mount.
    */
   return sdk.Daemons.of(effects)
-    .addOneshot('prepare-config', {
-      subcontainer: bosSub,
-      exec: {
-        command: [
-          'sh',
-          '-c',
-          // FileHelper.json wrote the file with mode 0600; BoS needs to be
-          // able to read it. Also make sure the directory tree is executable.
-          `mkdir -p ${bosHomeDir}/.bos/${bosSavedNode} && chmod -R a+rX ${bosHomeDir}/.bos`,
-        ],
-        user: 'root',
-      },
-      requires: [],
-    })
     .addDaemon('primary', {
       subcontainer: bosSub,
       exec: {
         command: ['tail', '-f', '/dev/null'],
-        env: {
-          BOS_DEFAULT_SAVED_NODE: bosSavedNode,
-          HOME: bosHomeDir,
-        },
       },
       ready: {
         display: i18n('Command Line'),
         fn: async () => {
-          const res = await bosSub.exec(['bos', 'peers'], { user: 'root' })
+          const res = await bosSub.exec(['bos', 'peers'])
           if (res.exitCode === 0) {
             return {
               result: 'success',
@@ -78,6 +63,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
         },
         gracePeriod: 15_000,
       },
-      requires: ['prepare-config'],
+      requires: [],
     })
 })

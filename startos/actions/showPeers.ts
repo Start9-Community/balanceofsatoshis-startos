@@ -1,6 +1,6 @@
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { bosHomeDir, bosSavedNode, lndMount } from '../utils'
+import { bosHomeDir, lndMount } from '../utils'
 
 export const showPeers = sdk.Action.withoutInput(
   'show-peers',
@@ -33,22 +33,13 @@ export const showPeers = sdk.Action.withoutInput(
           readonly: true,
         }),
       'bos-peers',
-      async (sub) =>
-        sub.exec(['bos', 'peers'], {
-          user: 'root',
-          env: {
-            BOS_DEFAULT_SAVED_NODE: bosSavedNode,
-            HOME: bosHomeDir,
-          },
-        }),
+      async (sub) => sub.execFail(['bos', 'peers']),
     )
-
-    const out = res.stdout.toString() || res.stderr.toString() || ''
 
     return {
       version: '1',
       title: i18n('Success'),
-      message: out,
+      message: res.stdout.toString().trim(),
       result: null,
     }
   },

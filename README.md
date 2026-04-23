@@ -42,13 +42,13 @@ operations. **BoS is a command-line tool only — there is no web UI.**
 | Property | Value |
 |----------|-------|
 | Base image | `node:lts-alpine` (built from local `Dockerfile`) |
-| BoS version | `balanceofsatoshis@20.1.3` (installed via `npm install -g`) |
+| Install method | `npm install -g balanceofsatoshis` |
 | Image source | `dockerBuild` (no upstream Docker image is published) |
 | Architectures | x86_64, aarch64 |
 
 The image installs `balanceofsatoshis` globally via npm. Upstream does not
-publish an official Docker image, so we build one. The `BOS_VERSION` build
-arg in the Dockerfile controls the pinned release.
+publish an official Docker image, so we build one. The pinned release lives
+in the `Dockerfile`.
 
 ---
 
@@ -59,13 +59,16 @@ arg in the Dockerfile controls the pinned release.
 | `main` | `/root` | BoS home directory; holds `.bos/embassy/credentials.json` and any saved nodes, notes, and tags |
 | (LND dependency) | `/mnt/lnd` | Read-only access to LND TLS cert and admin macaroon |
 
+BoS runs as root inside the container. This is required so it can read
+LND's root-owned `0600` `admin.macaroon`, which is mounted read-only and
+cannot be re-permissioned from this side.
+
 **Key paths on the `main` volume:**
 
 - `.bos/embassy/credentials.json` — how BoS reaches LND (managed by StartOS)
 
-`BOS_DEFAULT_SAVED_NODE=embassy` is set in the daemon environment. This
-preserves the 0.3.5.1 on-disk layout and lets `bos` commands find the
-saved node without extra flags.
+`BOS_DEFAULT_SAVED_NODE=embassy` is set in the daemon environment, which
+lets `bos` commands find the saved node without extra flags.
 
 ---
 
@@ -188,16 +191,13 @@ generated credentials.
 
 ## Limitations and Differences
 
-1. **No web UI.** All 0.3.5.1 behavior is preserved — this service was
-   always CLI-only.
-2. **No external interfaces.** The 0.3.5.1 manifest declared a Tor/LAN
-   network interface with `ui: false`, but nothing actually listened on
-   it. The 0.4.0 port drops the vestigial interface declaration.
+1. **No web UI.** BoS is CLI-only.
+2. **No external interfaces.** No Tor or LAN interface is declared; BoS
+   speaks only to LND over the private `lnd.startos` gRPC socket.
 3. **Fixed saved-node name.** `BOS_DEFAULT_SAVED_NODE=embassy` is kept
-   for backwards compatibility with existing backups and snippets. The
-   on-disk layout matches 0.3.5.1.
-4. **No user config.** The 0.3.5.1 package exposed no config surface; the
-   0.4.0 port does the same.
+   for backwards compatibility with existing backups and user snippets.
+4. **No user config.** All connection settings are derived from the
+   bundled LND dependency.
 
 ---
 
@@ -214,13 +214,13 @@ generated credentials.
 
 ```yaml
 package_id: balanceofsatoshis
-image: local-dockerBuild (node:lts-alpine + npm balanceofsatoshis@20.1.3)
+image: local-dockerBuild (node:lts-alpine + npm balanceofsatoshis)
 architectures: [x86_64, aarch64]
 volumes:
   main: /root
 ports: []
 dependencies:
-  lnd (required, >=0.20.1-beta:1)
+  lnd (required; see manifest for version range)
 actions:
   - show-peers
   - show-version

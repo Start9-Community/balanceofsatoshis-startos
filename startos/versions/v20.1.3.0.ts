@@ -4,16 +4,12 @@ import { rm } from 'fs/promises'
 export const v_20_1_3_0 = VersionInfo.of({
   version: '20.1.3:0',
   releaseNotes: {
-    en_US:
-      'Balance of Satoshis v20.1.3 ported to StartOS 0.4.0. Packaging rewritten on top of @start9labs/start-sdk 1.2.1.',
-    es_ES:
-      'Balance of Satoshis v20.1.3 portado a StartOS 0.4.0. Empaquetado reescrito sobre @start9labs/start-sdk 1.2.1.',
+    en_US: 'Ported to StartOS 0.4.0. Packaging rewritten on the new SDK.',
+    es_ES: 'Portado a StartOS 0.4.0. Empaquetado reescrito sobre el nuevo SDK.',
     de_DE:
-      'Balance of Satoshis v20.1.3 wurde auf StartOS 0.4.0 portiert. Das Paket wurde auf Basis von @start9labs/start-sdk 1.2.1 neu geschrieben.',
-    pl_PL:
-      'Balance of Satoshis v20.1.3 przeniesione na StartOS 0.4.0. Pakiet przepisany na @start9labs/start-sdk 1.2.1.',
-    fr_FR:
-      'Balance of Satoshis v20.1.3 porte vers StartOS 0.4.0. Packaging reecrit sur la base de @start9labs/start-sdk 1.2.1.',
+      'Auf StartOS 0.4.0 portiert. Das Paket wurde auf Basis des neuen SDK neu geschrieben.',
+    pl_PL: 'Przeniesione na StartOS 0.4.0. Pakiet przepisany na nowym SDK.',
+    fr_FR: 'Porte vers StartOS 0.4.0. Packaging reecrit sur le nouveau SDK.',
   },
   migrations: {
     up: async ({ effects }) => {

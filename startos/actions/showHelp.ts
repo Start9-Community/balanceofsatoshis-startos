@@ -19,15 +19,13 @@ export const showHelp = sdk.Action.withoutInput(
       { imageId: 'balanceofsatoshis' },
       sdk.Mounts.of(),
       'bos-help',
-      async (sub) => sub.exec(['bos', 'help'], { user: 'root' }),
+      async (sub) => sub.execFail(['bos', 'help']),
     )
-
-    const out = res.stdout.toString() || res.stderr.toString() || ''
 
     return {
       version: '1',
       title: i18n('Success'),
-      message: out,
+      message: res.stdout.toString().trim(),
       result: null,
     }
   },

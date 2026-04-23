@@ -19,15 +19,13 @@ export const showVersion = sdk.Action.withoutInput(
       { imageId: 'balanceofsatoshis' },
       sdk.Mounts.of(),
       'bos-version',
-      async (sub) => sub.exec(['bos', '--version'], { user: 'root' }),
+      async (sub) => sub.execFail(['bos', '--version']),
     )
-
-    const out = (res.stdout.toString() || res.stderr.toString() || '').trim()
 
     return {
       version: '1',
       title: i18n('Success'),
-      message: out || 'unknown',
+      message: res.stdout.toString().trim(),
       result: null,
     }
   },
