@@ -1,15 +1,29 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 import { rm } from 'fs/promises'
 
-export const v_20_1_3_0 = VersionInfo.of({
-  version: '20.1.3:0',
+export const v_22_0_1_0 = VersionInfo.of({
+  version: '22.0.1:0',
   releaseNotes: {
-    en_US: 'Ported to StartOS 0.4.0. Packaging rewritten on the new SDK.',
-    es_ES: 'Portado a StartOS 0.4.0. Empaquetado reescrito sobre el nuevo SDK.',
-    de_DE:
-      'Auf StartOS 0.4.0 portiert. Das Paket wurde auf Basis des neuen SDK neu geschrieben.',
-    pl_PL: 'Przeniesione na StartOS 0.4.0. Pakiet przepisany na nowym SDK.',
-    fr_FR: 'Porte vers StartOS 0.4.0. Packaging reecrit sur le nouveau SDK.',
+    en_US: `**Bumps**
+
+- Balance of Satoshis → 22.0.1
+- start-sdk → 1.5.0`,
+    es_ES: `**Actualizaciones**
+
+- Balance of Satoshis → 22.0.1
+- start-sdk → 1.5.0`,
+    de_DE: `**Aktualisierungen**
+
+- Balance of Satoshis → 22.0.1
+- start-sdk → 1.5.0`,
+    pl_PL: `**Aktualizacje**
+
+- Balance of Satoshis → 22.0.1
+- start-sdk → 1.5.0`,
+    fr_FR: `**Mises à jour**
+
+- Balance of Satoshis → 22.0.1
+- start-sdk → 1.5.0`,
   },
   migrations: {
     up: async ({ effects }) => {

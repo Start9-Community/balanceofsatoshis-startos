@@ -10,10 +10,6 @@ export const manifest = setupManifest({
   marketingUrl: 'https://github.com/alexbosworth/balanceofsatoshis',
   donationUrl:
     'https://yalls.org/hashcash/7bff5e4f-4534-4cca-8daa-3d5a3c239919/',
-  docsUrls: [
-    'https://github.com/alexbosworth/balanceofsatoshis#readme',
-    'https://github.com/alexbosworth/balanceofsatoshis/blob/master/commands/README.md',
-  ],
   description: { short, long },
   volumes: ['main'],
   images: {
