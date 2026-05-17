@@ -5,7 +5,7 @@ export const manifest = setupManifest({
   id: 'balanceofsatoshis',
   title: 'Balance of Satoshis',
   license: 'MIT',
-  packageRepo: 'https://github.com/Start9Labs/balanceofsatoshis-startos',
+  packageRepo: 'https://github.com/Start9-Community/balanceofsatoshis-startos',
   upstreamRepo: 'https://github.com/alexbosworth/balanceofsatoshis',
   marketingUrl: 'https://github.com/alexbosworth/balanceofsatoshis',
   donationUrl:
