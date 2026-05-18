@@ -1,29 +1,14 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 import { rm } from 'fs/promises'
 
-export const v_22_0_1_0 = VersionInfo.of({
-  version: '22.0.1:0',
+export const v_22_0_1_1 = VersionInfo.of({
+  version: '22.0.1:1',
   releaseNotes: {
-    en_US: `**Bumps**
-
-- Balance of Satoshis → 22.0.1
-- start-sdk → 1.5.0`,
-    es_ES: `**Actualizaciones**
-
-- Balance of Satoshis → 22.0.1
-- start-sdk → 1.5.0`,
-    de_DE: `**Aktualisierungen**
-
-- Balance of Satoshis → 22.0.1
-- start-sdk → 1.5.0`,
-    pl_PL: `**Aktualizacje**
-
-- Balance of Satoshis → 22.0.1
-- start-sdk → 1.5.0`,
-    fr_FR: `**Mises à jour**
-
-- Balance of Satoshis → 22.0.1
-- start-sdk → 1.5.0`,
+    en_US: 'Updated to start-sdk 1.5.2.',
+    es_ES: 'Actualizado a start-sdk 1.5.2.',
+    de_DE: 'Aktualisierung auf start-sdk 1.5.2.',
+    pl_PL: 'Zaktualizowano do start-sdk 1.5.2.',
+    fr_FR: 'Mise à jour vers start-sdk 1.5.2.',
   },
   migrations: {
     up: async ({ effects }) => {
