@@ -41,11 +41,21 @@ export const main = sdk.setupMain(async ({ effects }) => {
    * from the read-only LND volume mount.
    */
   return sdk.Daemons.of(effects)
-    .addDaemon('primary', {
-      subcontainer: bosSub,
-      exec: {
-        command: ['tail', '-f', '/dev/null'],
-      },
+.addDaemon('primary', {
+  subcontainer: bosSub,
+  exec: {
+    command: [
+      'sh',
+      '-c',
+      `
+if [ -f /root/.bos/telegram_connect_code ] && [ -s /root/.bos/telegram_connect_code ]; then
+  bos telegram --connect "$(cat /root/.bos/telegram_connect_code)" &
+fi
+
+tail -f /dev/null
+`,
+    ],
+  },
       ready: {
         display: i18n('Command Line'),
         fn: async () => {
