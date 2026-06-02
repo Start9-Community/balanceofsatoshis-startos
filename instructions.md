@@ -23,7 +23,7 @@ There is no web interface and no network port — `bos` is reached only via SSH.
 4. SSH into your StartOS server and open a shell in the container:
 
    ```bash
-   sudo podman exec -it balanceofsatoshis.startos /bin/bash
+   start-cli package attach balanceofsatoshis
    ```
 
 5. Run `bos help` to see the full command list, then `bos peers` to confirm BoS can reach LND.
