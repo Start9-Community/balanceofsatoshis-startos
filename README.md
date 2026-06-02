@@ -29,6 +29,7 @@ operations. **BoS is a command-line tool only — there is no web UI.**
 - [Network Access and Interfaces](#network-access-and-interfaces)
 - [Dependencies](#dependencies)
 - [Actions](#actions)
+- [Telegram](#telegram)
 - [Backups and Restore](#backups-and-restore)
 - [Health Checks](#health-checks)
 - [Limitations and Differences](#limitations-and-differences)
@@ -66,6 +67,7 @@ cannot be re-permissioned from this side.
 **Key paths on the `main` volume:**
 
 - `.bos/embassy/credentials.json` — how BoS reaches LND (managed by StartOS)
+- `.startos/store.json` — package state managed by StartOS (currently the saved Telegram connect code; see [Telegram](#telegram))
 
 `BOS_DEFAULT_SAVED_NODE=embassy` is set in the daemon environment, which
 lets `bos` commands find the saved node without extra flags.
@@ -147,17 +149,42 @@ operations are available.
 
 ## Actions
 
-The StartOS UI surfaces three convenience actions. They are not a
-substitute for a shell — they exist so users can confirm connectivity
-without SSH'ing in.
+The StartOS UI surfaces four actions:
 
 | Action | Purpose |
 |--------|---------|
 | Show Peers | Run `bos peers` and display the output |
 | Show Version | Display the installed BoS version |
 | Show Help | Display `bos help` for command discovery |
+| Save Telegram Connect Code | Persist a Telegram connect code so the bot reconnects automatically (see [Telegram](#telegram)) |
 
-All other BoS functionality is available from inside the container shell.
+The first three are read-only connectivity checks — they exist so users can
+confirm BoS can reach LND without SSH'ing in. All other BoS functionality is
+available from inside the container shell.
+
+---
+
+## Telegram
+
+Upstream's `bos telegram --connect <code>` pairing is one-time and does not
+survive a restart. This package persists the code and re-runs the pairing on
+every start, so the [Telegram bot](https://github.com/alexbosworth/balanceofsatoshis/blob/master/telegram/README.md)
+reconnects automatically.
+
+Mechanism:
+
+- The connect code lives in the package's `store.json` on the `main` volume
+  (`.startos/store.json`, `telegramConnectCode` key), written by the
+  **Save Telegram Connect Code** action (`FileHelper.json`).
+- `main` reads it via the file model. When a code is set, it adds a dedicated
+  `telegram` daemon running `bos telegram --connect <code>`, ordered after
+  `primary` (so LND is reachable first) and supervised — StartOS restarts it if
+  it crashes. Liveness is the `pgrep -f telegram` health check.
+- Because `main` reads through the file model, saving a code re-runs `main` and
+  brings the bot up without a restart; clearing it (submitting the action with
+  an empty field) drops the daemon.
+
+End-user setup steps live in `instructions.md`.
 
 ---
 
@@ -183,21 +210,25 @@ BoS — to preserve your on-chain and channel state.
 | Check | Display Name | Method | Messages |
 |-------|--------------|--------|----------|
 | Primary daemon | Command Line | Runs `bos peers` in the daemon subcontainer | Ready / Not responding |
+| Telegram daemon | Telegram Bot | Runs `pgrep -f telegram` (only present when a connect code is saved) | Running / Not running |
 
 A successful `bos peers` invocation means BoS can reach LND using the
-generated credentials.
+generated credentials. The Telegram Bot check appears only when a connect
+code has been saved (see [Telegram](#telegram)).
 
 ---
 
 ## Limitations and Differences
 
 1. **No web UI.** BoS is CLI-only.
-2. **No external interfaces.** No Tor or LAN interface is declared; BoS
-   speaks only to LND over the private `lnd.startos` gRPC socket.
+2. **No external interfaces.** No Tor or LAN interface is declared. BoS
+   speaks to LND over the private `lnd.startos` gRPC socket, plus an
+   outbound connection to Telegram's API if the bot is configured.
 3. **Fixed saved-node name.** `BOS_DEFAULT_SAVED_NODE=embassy` is kept
    for backwards compatibility with existing backups and user snippets.
-4. **No user config.** All connection settings are derived from the
-   bundled LND dependency.
+4. **Minimal user config.** Connection settings are derived from the
+   bundled LND dependency; the only user-supplied setting is the optional
+   Telegram connect code (see [Telegram](#telegram)).
 
 ---
 
@@ -225,8 +256,10 @@ actions:
   - show-peers
   - show-version
   - show-help
+  - save-telegram-connect-code
 health_checks:
   - primary: bos peers exit == 0
+  - telegram: pgrep -f telegram exit == 0 (only when connect code saved)
 backup_volumes:
   - main
 fixed_config:

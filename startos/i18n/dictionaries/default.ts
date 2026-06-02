@@ -15,6 +15,15 @@ const dict = {
   'Show Help': 8,
   'List all available Balance of Satoshis commands': 9,
   Success: 10,
+  'Save Telegram Connect Code': 11,
+  'Store the Telegram connect code for automatic reconnects': 12,
+  'Telegram connect code saved. Balance of Satoshis will connect to Telegram automatically.': 13,
+  'Telegram connect code cleared. The Telegram bot will not start.': 17,
+
+  // main.ts (Telegram daemon)
+  'Telegram Bot': 14,
+  'The Telegram bot is running': 15,
+  'The Telegram bot is not running': 16,
 } as const
 
 /**

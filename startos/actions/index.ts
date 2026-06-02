@@ -1,8 +1,8 @@
 import { sdk } from '../sdk'
+import { saveTelegramConnectCode } from './saveTelegramConnectCode'
 import { showHelp } from './showHelp'
 import { showPeers } from './showPeers'
 import { showVersion } from './showVersion'
-import { saveTelegramConnectCode } from './saveTelegramConnectCode'
 
 export const actions = sdk.Actions.of()
   .addAction(showPeers)
