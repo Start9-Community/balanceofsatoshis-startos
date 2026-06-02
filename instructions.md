@@ -11,7 +11,7 @@ Balance of Satoshis is command-line only. To use it day-to-day you connect to yo
 
 - A `bos` CLI globally installed in the service's container, pre-wired to talk to the bundled LND dependency over its private gRPC socket — no manual `credentials.json` editing.
 - A persistent `~/.bos` directory on the `main` volume that survives restarts and is included in backups (saved nodes, tags, notes).
-- A small set of read-only convenience actions in the StartOS UI so you can sanity-check connectivity without opening a shell.
+- A handful of StartOS UI actions: read-only connectivity checks, plus a **Save Telegram Connect Code** action that wires up the optional Telegram bot — all without opening a shell.
 
 There is no web interface and no network port — `bos` is reached only via SSH.
 
@@ -34,8 +34,19 @@ The CLI is the interface. Inside the container shell you have the full `bos` com
 
 ### Actions
 
-The service page also exposes three read-only actions you can run from the StartOS UI without opening a shell:
+The service page also exposes actions you can run from the StartOS UI without opening a shell:
 
 - **Show Peers** — runs `bos peers` and shows the connected peer list. Useful as a quick "is LND reachable?" check.
 - **Show Version** — shows the installed `bos` version.
 - **Show Help** — shows the full `bos help` command list, the same output you'd see in the shell.
+- **Save Telegram Connect Code** — stores a Telegram connect code so the bot reconnects automatically (see below).
+
+## Telegram bot (optional)
+
+Balance of Satoshis can run a [Telegram bot](https://github.com/alexbosworth/balanceofsatoshis/blob/master/telegram/README.md) for node notifications and commands. To set it up:
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) on Telegram.
+2. Open a shell in the container, run `bos telegram`, and follow the prompts to get a connect code (your bot API key is saved automatically).
+3. Run the **Save Telegram Connect Code** action and paste the code.
+
+The bot then connects automatically and reconnects after every restart — you don't need to run the connect command again. To turn it off, run the **Save Telegram Connect Code** action again and submit it with the code field empty.

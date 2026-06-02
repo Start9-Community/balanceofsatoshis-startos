@@ -1,3 +1,4 @@
+import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
 import { bosHomeDir, lndMount } from './utils'
@@ -31,6 +32,15 @@ export const main = sdk.setupMain(async ({ effects }) => {
   )
 
   /**
+   * Re-runs `main` whenever the saved connect code changes, so writing it via
+   * the Save Telegram Connect Code action brings the bot up without a manual
+   * restart.
+   */
+  const connectCode = (
+    await storeJson.read((s) => s.telegramConnectCode).const(effects)
+  )?.trim()
+
+  /**
    * ======================== Daemons ========================
    *
    * BoS is a CLI tool. We run a long-lived idle daemon so that users can
@@ -40,29 +50,52 @@ export const main = sdk.setupMain(async ({ effects }) => {
    * BoS runs as root so it can read LND's root-owned 0600 admin.macaroon
    * from the read-only LND volume mount.
    */
-  return sdk.Daemons.of(effects)
-    .addDaemon('primary', {
-      subcontainer: bosSub,
-      exec: {
-        command: ['tail', '-f', '/dev/null'],
-      },
-      ready: {
-        display: i18n('Command Line'),
-        fn: async () => {
-          const res = await bosSub.exec(['bos', 'peers'])
-          if (res.exitCode === 0) {
-            return {
-              result: 'success',
-              message: i18n('Balance of Satoshis is ready'),
-            }
-          }
+  const daemons = sdk.Daemons.of(effects).addDaemon('primary', {
+    subcontainer: bosSub,
+    exec: {
+      command: ['tail', '-f', '/dev/null'],
+    },
+    ready: {
+      display: i18n('Command Line'),
+      fn: async () => {
+        const res = await bosSub.exec(['bos', 'peers'])
+        if (res.exitCode === 0) {
           return {
-            result: 'loading',
-            message: i18n('Balance of Satoshis is not responding'),
+            result: 'success',
+            message: i18n('Balance of Satoshis is ready'),
           }
-        },
-        gracePeriod: 15_000,
+        }
+        return {
+          result: 'loading',
+          message: i18n('Balance of Satoshis is not responding'),
+        }
       },
-      requires: [],
-    })
+      gracePeriod: 15_000,
+    },
+    requires: [],
+  })
+
+  /**
+   * When a connect code has been saved, run the Telegram bot as its own
+   * supervised daemon — StartOS restarts it if it crashes, and `requires`
+   * orders it after `primary` so LND is reachable before it connects.
+   */
+  if (!connectCode) return daemons
+
+  return daemons.addDaemon('telegram', {
+    subcontainer: bosSub,
+    exec: {
+      command: ['bos', 'telegram', '--connect', connectCode],
+    },
+    ready: {
+      display: i18n('Telegram Bot'),
+      fn: () =>
+        sdk.healthCheck.runHealthScript(['pgrep', '-f', 'telegram'], bosSub, {
+          errorMessage: i18n('The Telegram bot is not running'),
+          message: () => i18n('The Telegram bot is running'),
+        }),
+      gracePeriod: 30_000,
+    },
+    requires: ['primary'],
+  })
 })
