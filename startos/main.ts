@@ -96,6 +96,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
         }),
       gracePeriod: 30_000,
     },
-    requires: ['primary'],
+    requires: [],
   })
 })
