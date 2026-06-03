@@ -2,18 +2,18 @@ import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 import { rm } from 'fs/promises'
 
 export const current = VersionInfo.of({
-  version: '22.0.1:2',
+  version: '22.0.1:3',
   releaseNotes: {
     en_US:
-      'The Telegram bot now reconnects automatically after restarts: save your connect code with the new "Save Telegram Connect Code" action. Updated to start-sdk 1.5.3.',
+      'New UI shortcut actions let you check node state without opening a shell: balance, liquidity, report, forwards, fees earned, payments received, peers, UTXOs, chain fees, and closed channels. Telegram is now set up and managed entirely from the UI — set your bot API key, connect with the code your bot replies, and enable or disable the bot at any time. It runs supervised, reconnects automatically after restarts, and no longer restarts when node readiness briefly flaps.',
     es_ES:
-      'El bot de Telegram ahora se reconecta automáticamente tras los reinicios: guarda tu código de conexión con la nueva acción "Guardar código de conexión de Telegram". Actualizado a start-sdk 1.5.3.',
+      'Nuevas acciones rápidas en la interfaz permiten consultar el estado del nodo sin abrir una terminal: balance, liquidez, informe, reenvíos, comisiones ganadas, pagos recibidos, pares, UTXOs, comisiones en cadena y canales cerrados. Telegram ahora se configura y gestiona por completo desde la interfaz: establece la clave API de tu bot, conéctalo con el código que te responde el bot y actívalo o desactívalo cuando quieras. Se ejecuta supervisado, se reconecta automáticamente tras los reinicios y ya no se reinicia cuando la disponibilidad del nodo fluctúa brevemente.',
     de_DE:
-      'Der Telegram-Bot verbindet sich nach Neustarts jetzt automatisch wieder: Speichern Sie Ihren Verbindungscode mit der neuen Aktion „Telegram-Verbindungscode speichern". Aktualisierung auf start-sdk 1.5.3.',
+      'Neue Schnellaktionen in der Benutzeroberfläche zeigen den Knotenstatus an, ohne eine Shell zu öffnen: Guthaben, Liquidität, Bericht, Weiterleitungen, verdiente Gebühren, empfangene Zahlungen, Peers, UTXOs, On-Chain-Gebühren und geschlossene Kanäle. Telegram lässt sich jetzt vollständig über die Benutzeroberfläche einrichten und verwalten: Bot-API-Schlüssel festlegen, mit dem vom Bot gesendeten Code verbinden und den Bot jederzeit aktivieren oder deaktivieren. Er läuft überwacht, verbindet sich nach Neustarts automatisch wieder und startet nicht mehr neu, wenn die Bereitschaft des Knotens kurz schwankt.',
     pl_PL:
-      'Bot Telegram łączy się teraz automatycznie po ponownym uruchomieniu: zapisz kod połączenia za pomocą nowej akcji „Zapisz kod połączenia Telegram". Zaktualizowano do start-sdk 1.5.3.',
+      'Nowe akcje skrótów w interfejsie pozwalają sprawdzić stan węzła bez otwierania powłoki: saldo, płynność, raport, przekazania, zarobione opłaty, otrzymane płatności, peery, UTXO, opłaty on-chain i zamknięte kanały. Telegram można teraz w pełni skonfigurować i obsługiwać z poziomu interfejsu: ustaw klucz API bota, połącz go kodem, który odsyła bot, oraz włączaj i wyłączaj bota w dowolnej chwili. Działa pod nadzorem, automatycznie łączy się ponownie po restartach i nie restartuje się już, gdy gotowość węzła chwilowo się waha.',
     fr_FR:
-      'Le bot Telegram se reconnecte désormais automatiquement après un redémarrage : enregistrez votre code de connexion avec la nouvelle action « Enregistrer le code de connexion Telegram ». Mise à jour vers start-sdk 1.5.3.',
+      "De nouvelles actions de raccourci dans l'interface permettent de consulter l'état du nœud sans ouvrir de shell : solde, liquidité, rapport, transferts, frais gagnés, paiements reçus, pairs, UTXO, frais on-chain et canaux fermés. Telegram se configure et se gère désormais entièrement depuis l'interface : définissez la clé API de votre bot, connectez-le avec le code qu'il vous envoie, puis activez ou désactivez-le à tout moment. Il s'exécute sous supervision, se reconnecte automatiquement après les redémarrages et ne redémarre plus lorsque la disponibilité du nœud fluctue brièvement.",
   },
   migrations: {
     up: async ({ effects }) => {
