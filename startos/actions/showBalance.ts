@@ -2,15 +2,17 @@ import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 import { bosHomeDir, formatBosOutput, lndMount } from '../utils'
 
-export const showPeers = sdk.Action.withoutInput(
-  'show-peers',
+export const showBalance = sdk.Action.withoutInput(
+  'show-balance',
 
   async ({ effects }) => ({
-    name: i18n('Show Peers'),
-    description: i18n('List the peers currently connected to your LND node'),
+    name: i18n('Show Balance'),
+    description: i18n(
+      'Show a detailed breakdown of on-chain, off-chain, and pending balances',
+    ),
     warning: null,
     allowedStatuses: 'only-running',
-    group: i18n('On-chain Inspection'),
+    group: i18n('Balance & Liquidity'),
     visibility: 'enabled',
   }),
 
@@ -32,8 +34,8 @@ export const showPeers = sdk.Action.withoutInput(
           mountpoint: lndMount,
           readonly: true,
         }),
-      'bos-peers',
-      async (sub) => sub.execFail(['bos', 'peers']),
+      'bos-balance',
+      async (sub) => sub.execFail(['bos', 'balance', '--detailed']),
     )
 
     return {

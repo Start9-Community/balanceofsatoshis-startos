@@ -1,4 +1,5 @@
 import { storeJson } from './fileModels/store.json'
+import { telegramApiKey } from './fileModels/telegramApiKey'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
 import { bosHomeDir, lndMount } from './utils'
@@ -32,23 +33,31 @@ export const main = sdk.setupMain(async ({ effects }) => {
   )
 
   /**
-   * Re-runs `main` whenever the saved connect code changes, so writing it via
-   * the Save Telegram Connect Code action brings the bot up without a manual
-   * restart.
+   * Telegram state. Read through the file models so that writing them (via the
+   * Telegram actions) re-runs `main` and rebuilds the daemon set below — no
+   * manual restart needed.
+   *
+   * - The API key lives at `~/.bos/telegram_bot_api_key` because BoS reads it
+   *   from there directly; its presence gates whether we run the bot at all.
+   * - The connect code and on/off flag live in the package `store.json`.
+   *
+   * Absent (or `true`) `telegramEnabled` counts as enabled, so the bot comes up
+   * as soon as an API key is set.
    */
-  const connectCode = (
-    await storeJson.read((s) => s.telegramConnectCode).const(effects)
-  )?.trim()
+  const apiKey = await telegramApiKey.read().const(effects)
+  const store = await storeJson.read().const(effects)
+  const connectCode = store?.telegramConnectCode?.trim()
+  const telegramEnabled = store?.telegramEnabled !== false
 
   /**
    * ======================== Daemons ========================
    *
-   * BoS is a CLI tool. We run a long-lived idle daemon so that users can
-   * `podman exec` into the container and invoke `bos` commands, and we
-   * expose the `bos peers` check as the readiness indicator.
+   * `primary` is a long-lived idle process that keeps the subcontainer alive so
+   * users can `start-cli package attach` in and run `bos` commands. Its
+   * readiness check (`bos peers`) doubles as the LND-reachability signal.
    *
-   * BoS runs as root so it can read LND's root-owned 0600 admin.macaroon
-   * from the read-only LND volume mount.
+   * BoS runs as root so it can read LND's root-owned 0600 admin.macaroon from
+   * the read-only LND volume mount.
    */
   const daemons = sdk.Daemons.of(effects).addDaemon('primary', {
     subcontainer: bosSub,
@@ -76,17 +85,30 @@ export const main = sdk.setupMain(async ({ effects }) => {
   })
 
   /**
-   * When a connect code has been saved, run the Telegram bot as its own
-   * supervised daemon — StartOS restarts it if it crashes, and `requires`
-   * orders it after `primary` so LND is reachable before it connects.
+   * The `telegram` daemon is added only once an API key has been saved AND the
+   * bot is enabled. It shares `bosSub` (both daemons `spawn` into it, so they
+   * don't conflict).
+   *
+   *   - API key, no connect code  -> `bos telegram`
+   *     The bot runs so you can message it `/connect` and get your code.
+   *   - API key + connect code    -> `bos telegram --connect <code>`
+   *     The authorized, fully-connected bot.
+   *
+   * StartOS supervises and restarts it on crash; the `pgrep` health check
+   * reports real liveness. It deliberately does NOT `requires: ['primary']`:
+   * `bos telegram` tolerates LND not being reachable yet, and tying it to
+   * primary's `bos peers` readiness caused the bot to be torn down and
+   * reconnected on every transient readiness flap.
    */
-  if (!connectCode) return daemons
+  if (!apiKey || !telegramEnabled) return daemons
+
+  const command: [string, ...string[]] = connectCode
+    ? ['bos', 'telegram', '--connect', connectCode]
+    : ['bos', 'telegram']
 
   return daemons.addDaemon('telegram', {
     subcontainer: bosSub,
-    exec: {
-      command: ['bos', 'telegram', '--connect', connectCode],
-    },
+    exec: { command },
     ready: {
       display: i18n('Telegram Bot'),
       fn: () =>
@@ -96,6 +118,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
         }),
       gracePeriod: 30_000,
     },
-    requires: ['primary'],
+    requires: [],
   })
 })

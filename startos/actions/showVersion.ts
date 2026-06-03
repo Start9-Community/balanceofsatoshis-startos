@@ -1,5 +1,6 @@
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
+import { formatBosOutput } from '../utils'
 
 export const showVersion = sdk.Action.withoutInput(
   'show-version',
@@ -25,7 +26,7 @@ export const showVersion = sdk.Action.withoutInput(
     return {
       version: '1',
       title: i18n('Success'),
-      message: res.stdout.toString().trim(),
+      message: formatBosOutput(res.stdout),
       result: null,
     }
   },

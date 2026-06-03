@@ -1,11 +1,6 @@
 import { FileHelper, z } from '@start9labs/start-sdk'
 import { sdk } from '../sdk'
-import {
-  bosSavedNode,
-  lndCertPath,
-  lndMacaroonPath,
-  lndSocket,
-} from '../utils'
+import { bosSavedNode, lndCertPath, lndMacaroonPath, lndSocket } from '../utils'
 
 const shape = z.object({
   cert_path: z.literal(lndCertPath).catch(lndCertPath),
