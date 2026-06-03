@@ -2,12 +2,12 @@ import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 import { bosHomeDir, formatBosOutput, lndMount } from '../utils'
 
-export const showPeers = sdk.Action.withoutInput(
-  'show-peers',
+export const showUtxos = sdk.Action.withoutInput(
+  'show-utxos',
 
   async ({ effects }) => ({
-    name: i18n('Show Peers'),
-    description: i18n('List the peers currently connected to your LND node'),
+    name: i18n('Show UTXOs'),
+    description: i18n('List on-chain UTXOs held by the node'),
     warning: null,
     allowedStatuses: 'only-running',
     group: i18n('On-chain Inspection'),
@@ -32,8 +32,8 @@ export const showPeers = sdk.Action.withoutInput(
           mountpoint: lndMount,
           readonly: true,
         }),
-      'bos-peers',
-      async (sub) => sub.execFail(['bos', 'peers']),
+      'bos-utxos',
+      async (sub) => sub.execFail(['bos', 'utxos']),
     )
 
     return {

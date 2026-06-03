@@ -2,15 +2,15 @@ import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 import { bosHomeDir, formatBosOutput, lndMount } from '../utils'
 
-export const showPeers = sdk.Action.withoutInput(
-  'show-peers',
+export const showForwards = sdk.Action.withoutInput(
+  'show-forwards',
 
   async ({ effects }) => ({
-    name: i18n('Show Peers'),
-    description: i18n('List the peers currently connected to your LND node'),
+    name: i18n('Show Forwards'),
+    description: i18n('Show a per-peer summary of recent forwarding activity'),
     warning: null,
     allowedStatuses: 'only-running',
-    group: i18n('On-chain Inspection'),
+    group: i18n('Forwards & Earnings'),
     visibility: 'enabled',
   }),
 
@@ -32,8 +32,8 @@ export const showPeers = sdk.Action.withoutInput(
           mountpoint: lndMount,
           readonly: true,
         }),
-      'bos-peers',
-      async (sub) => sub.execFail(['bos', 'peers']),
+      'bos-forwards',
+      async (sub) => sub.execFail(['bos', 'forwards']),
     )
 
     return {

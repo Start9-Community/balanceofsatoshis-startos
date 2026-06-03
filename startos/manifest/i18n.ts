@@ -1,11 +1,11 @@
 export const short = {
-  en_US: 'A command-line tool for working with the balance of your satoshis on LND',
+  en_US:
+    'A command-line tool for working with the balance of your satoshis on LND',
   es_ES:
     'Herramienta de linea de comandos para gestionar el balance de tus satoshis en LND',
   de_DE:
     'Kommandozeilen-Tool zum Arbeiten mit dem Guthaben Ihrer Satoshis auf LND',
-  pl_PL:
-    'Narzedzie wiersza polecen do zarzadzania bilansem satoshi w LND',
+  pl_PL: 'Narzedzie wiersza polecen do zarzadzania bilansem satoshi w LND',
   fr_FR:
     'Outil en ligne de commande pour travailler avec le solde de vos satoshis sur LND',
 }
@@ -25,15 +25,15 @@ export const long = {
 
 export const alertInstall = {
   en_US:
-    'READ CAREFULLY! Balance of Satoshis is a COMMAND-LINE ONLY tool. You must configure an SSH key on your server and connect via SSH to use this service. Please refer to the Start9 SSH guide (https://docs.start9.com) for setup instructions.',
+    "READ CAREFULLY! Balance of Satoshis is a COMMAND-LINE ONLY tool. The actions provided are shortcuts that don't represent the most powerful features of this software. You must configure an SSH key on your server and connect via SSH to use this service. Please refer to the Start9 SSH guide (https://docs.start9.com) for setup instructions.",
   es_ES:
-    'LEE CON ATENCION! Balance of Satoshis es una herramienta SOLO de linea de comandos. Debes configurar una clave SSH en tu servidor y conectarte por SSH para usar este servicio. Consulta la guia SSH de Start9 (https://docs.start9.com) para las instrucciones.',
+    'LEE CON ATENCION! Balance of Satoshis es una herramienta SOLO de linea de comandos. Las acciones disponibles son atajos que no representan las funciones mas potentes de este software. Debes configurar una clave SSH en tu servidor y conectarte por SSH para usar este servicio. Consulta la guia SSH de Start9 (https://docs.start9.com) para las instrucciones.',
   de_DE:
-    'BITTE SORGFAELTIG LESEN! Balance of Satoshis ist ein Tool, das AUSSCHLIESSLICH ueber die Kommandozeile bedient wird. Sie muessen einen SSH-Schluessel auf Ihrem Server einrichten und sich per SSH verbinden, um diesen Dienst zu verwenden. Anleitung siehe Start9-SSH-Leitfaden (https://docs.start9.com).',
+    'BITTE SORGFAELTIG LESEN! Balance of Satoshis ist ein Tool, das AUSSCHLIESSLICH ueber die Kommandozeile bedient wird. Die bereitgestellten Aktionen sind Verknuepfungen und stellen nicht die maechtigsten Funktionen dieser Software dar. Sie muessen einen SSH-Schluessel auf Ihrem Server einrichten und sich per SSH verbinden, um diesen Dienst zu verwenden. Anleitung siehe Start9-SSH-Leitfaden (https://docs.start9.com).',
   pl_PL:
-    'PRZECZYTAJ UWAZNIE! Balance of Satoshis to narzedzie dostepne TYLKO z wiersza polecen. Musisz skonfigurowac klucz SSH na serwerze i polaczyc sie przez SSH, aby korzystac z tej uslugi. Instrukcje znajdziesz w przewodniku SSH Start9 (https://docs.start9.com).',
+    'PRZECZYTAJ UWAZNIE! Balance of Satoshis to narzedzie dostepne TYLKO z wiersza polecen. Udostepnione akcje to skroty, ktore nie reprezentuja najpotezniejszych funkcji tego oprogramowania. Musisz skonfigurowac klucz SSH na serwerze i polaczyc sie przez SSH, aby korzystac z tej uslugi. Instrukcje znajdziesz w przewodniku SSH Start9 (https://docs.start9.com).',
   fr_FR:
-    'LISEZ ATTENTIVEMENT ! Balance of Satoshis est un outil UNIQUEMENT en ligne de commande. Vous devez configurer une cle SSH sur votre serveur et vous connecter via SSH pour utiliser ce service. Reportez-vous au guide SSH Start9 (https://docs.start9.com) pour la configuration.',
+    'LISEZ ATTENTIVEMENT ! Balance of Satoshis est un outil UNIQUEMENT en ligne de commande. Les actions fournies sont des raccourcis qui ne representent pas les fonctionnalites les plus puissantes de ce logiciel. Vous devez configurer une cle SSH sur votre serveur et vous connecter via SSH pour utiliser ce service. Reportez-vous au guide SSH Start9 (https://docs.start9.com) pour la configuration.',
 }
 
 export const depLndDescription = {
@@ -42,6 +42,6 @@ export const depLndDescription = {
   de_DE:
     'Erforderlich, um Guthaben zu lesen und Kanaele auf Ihrem LND-Knoten zu verwalten',
   pl_PL: 'Wymagane do odczytu sald i zarzadzania kanalami na wezle LND',
-  fr_FR: 'Necessaire pour lire les soldes et gerer les canaux de votre noeud LND',
+  fr_FR:
+    'Necessaire pour lire les soldes et gerer les canaux de votre noeud LND',
 }
-
