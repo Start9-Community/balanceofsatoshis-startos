@@ -1,7 +1,16 @@
 export const bosSavedNode = 'embassy' as const
 export const bosHomeDir = '/root' as const
 export const lndMount = '/mnt/lnd' as const
-export const lndSocket = 'lnd.startos:10009' as const
+export const lndGrpcPort = 10009 as const
+/**
+ * Fallback socket only. `.startos` DNS is deprecated in favor of the LXC
+ * bridge; `main` resolves LND's gRPC bridge address (`sdk.host.get` on LND's
+ * exported `gRPCHostId`) and writes the real `host:port` into
+ * credentials.json — this literal is just the file model's `.catch()` default
+ * before that runs. LND's StartOS-issued cert covers its bridge address, so
+ * pinning that address still verifies.
+ */
+export const lndSocket = `lnd.startos:${lndGrpcPort}` as const
 export const lndCertPath = `${lndMount}/tls.cert` as const
 export const lndMacaroonPath =
   `${lndMount}/data/chain/bitcoin/mainnet/admin.macaroon` as const

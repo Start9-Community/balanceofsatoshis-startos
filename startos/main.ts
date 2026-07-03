@@ -1,14 +1,47 @@
+import {
+  gRPCHostId as lndGrpcHostId,
+  gRPCInterfaceId as lndGrpcInterfaceId,
+} from 'lnd-startos/startos/interfaces'
+import { credentialsJson } from './fileModels/credentials.json'
 import { storeJson } from './fileModels/store.json'
 import { telegramApiKey } from './fileModels/telegramApiKey'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
-import { bosHomeDir, lndMount } from './utils'
+import { bosHomeDir, lndMount, lndSocket } from './utils'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   /**
    * ======================== Setup ========================
    */
   console.info(i18n('Starting Balance of Satoshis...'))
+
+  /**
+   * Point BoS's saved-node credentials at LND's gRPC over the LXC bridge
+   * (`.startos` DNS and container IPs are deprecated). The map fn returns just
+   * the resolved `host:port`, so `.const()` re-runs `main` only when that
+   * address changes; LND's StartOS-issued cert covers its bridge address, so
+   * the pinned gRPC connection still verifies.
+   */
+  const socket =
+    (await sdk.host
+      .get(
+        effects,
+        { hostId: lndGrpcHostId, packageId: 'lnd' },
+        (host) => {
+          const iface =
+            host &&
+            Object.values(host.bindings)
+              .flatMap((b) => Object.values(b.interfaces))
+              .find((i) => i.id === lndGrpcInterfaceId)
+          const h = iface?.addressInfo.filter({
+            kind: 'bridge',
+            predicate: (h) => h.ssl && h.metadata.kind === 'ipv4',
+          }).hostnames[0]
+          return h && h.port != null ? `${h.hostname}:${h.port}` : undefined
+        },
+      )
+      .const()) ?? lndSocket
+  await credentialsJson.merge(effects, { socket })
 
   const mounts = sdk.Mounts.of()
     .mountVolume({
@@ -25,7 +58,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       readonly: true,
     })
 
-  const bosSub = await sdk.SubContainer.of(
+  const bosSub = sdk.SubContainer.of(
     effects,
     { imageId: 'balanceofsatoshis' },
     mounts,

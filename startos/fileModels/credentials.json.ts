@@ -5,7 +5,7 @@ import { bosSavedNode, lndCertPath, lndMacaroonPath, lndSocket } from '../utils'
 const shape = z.object({
   cert_path: z.literal(lndCertPath).catch(lndCertPath),
   macaroon_path: z.literal(lndMacaroonPath).catch(lndMacaroonPath),
-  socket: z.literal(lndSocket).catch(lndSocket),
+  socket: z.string().catch(lndSocket),
 })
 
 /**
