@@ -107,14 +107,21 @@ lets `bos` commands find the saved node without extra flags.
 |---------|---------|---------|
 | `cert_path` | `/mnt/lnd/tls.cert` | LND TLS certificate path |
 | `macaroon_path` | `/mnt/lnd/data/chain/bitcoin/mainnet/admin.macaroon` | LND admin macaroon path |
-| `socket` | LND's gRPC bridge address, resolved at each start | LND gRPC socket |
+| `socket` | LND's gRPC bridge address (loopback placeholder until resolved) | LND gRPC socket |
 
 `cert_path` and `macaroon_path` are locked to the correct paths for the
 bundled LND dependency, enforced on every merge by `z.literal(...).catch(...)`
-in the file model. `socket` is resolved at each start from LND's gRPC address over the LXC
-bridge (`sdk.host.get` on LND's exported `gRPCHostId`; the `lnd.startos` DNS
-name is deprecated) and written into the file — LND's StartOS-issued cert
-covers its bridge address, so the pinned gRPC connection still verifies.
+in the file model. `socket` is resolved reactively from LND's gRPC address
+over the LXC bridge and written into the file: the `bridgeAddress` helper in
+`utils.ts` maps LND's exported `gRPCHostId`/`gRPCPort` to
+`10.0.3.1:<assigned port>` and `main` chains `.const()` on it, so the service
+restarts exactly once whenever LND is installed, uninstalled, or moves ports —
+never on an LND update, and never on lock/unlock cycles (the binding entry and
+assigned port survive). LND binds gRPC only after its wallet is first unlocked;
+until then (and while LND is absent) the address resolves null and `socket`
+falls back to a `127.0.0.1:10009` loopback placeholder, healing with one
+restart when LND's gRPC appears. LND's StartOS-issued cert covers its bridge
+address, so the pinned gRPC connection still verifies.
 
 ### Environment Variables (fixed)
 

@@ -1,16 +1,71 @@
+import { T } from '@start9labs/start-sdk'
+import { gRPCPort as lndGrpcPort } from 'lnd-startos/startos/interfaces'
+import { sdk } from './sdk'
+
+/**
+ * Bridge address (`10.0.3.1:<assigned external port>`) of a dependency's
+ * binding, as a minimal reactive value. Chain `.const()` in main: the mapped
+ * string only changes when the address itself does, so main restarts exactly
+ * on dependency install/uninstall/port-change and never on dependency
+ * updates. Chain `.once()` in an action context. `fallbackPort` keeps the
+ * value non-null while the dependency is absent — sanctioned only for tor's
+ * allocator-guaranteed SOCKS 9050. Drop-in for the planned SDK
+ * `sdk.host.getBridgeAddress` helper.
+ */
+export function bridgeAddress(
+  effects: T.Effects,
+  opts: {
+    packageId: string
+    hostId: string
+    internalPort: number
+    fallbackPort: number
+  },
+): { const(): Promise<string>; once(): Promise<string> }
+export function bridgeAddress(
+  effects: T.Effects,
+  opts: { packageId: string; hostId: string; internalPort: number },
+): { const(): Promise<string | null>; once(): Promise<string | null> }
+export function bridgeAddress(
+  effects: T.Effects,
+  opts: {
+    packageId: string
+    hostId: string
+    internalPort: number
+    fallbackPort?: number
+  },
+) {
+  const watchable = async () => {
+    const osIp = await sdk.getOsIp(effects)
+    return sdk.host.get(
+      effects,
+      { packageId: opts.packageId, hostId: opts.hostId },
+      (host) => {
+        const port =
+          host?.bindings[opts.internalPort]?.net.assignedPort ??
+          opts.fallbackPort
+        return port != null ? `${osIp}:${port}` : null
+      },
+    )
+  }
+  return {
+    const: async () => (await watchable()).const(),
+    once: async () => (await watchable()).once(),
+  }
+}
+
 export const bosSavedNode = 'embassy' as const
 export const bosHomeDir = '/root' as const
 export const lndMount = '/mnt/lnd' as const
-export const lndGrpcPort = 10009 as const
 /**
- * Fallback socket only. `.startos` DNS is deprecated in favor of the LXC
- * bridge; `main` resolves LND's gRPC bridge address (`sdk.host.get` on LND's
- * exported `gRPCHostId`) and writes the real `host:port` into
- * credentials.json — this literal is just the file model's `.catch()` default
- * before that runs. LND's StartOS-issued cert covers its bridge address, so
- * pinning that address still verifies.
+ * Loopback placeholder for BoS's saved-node `socket`. `main` resolves LND's
+ * gRPC bridge address reactively (see `bridgeAddress`) and writes the real
+ * `host:port` into credentials.json; this stands in only while LND is absent
+ * or before its wallet is first unlocked (gRPC binds at unlock), and as the
+ * file model's `.catch()` seed. A dead loopback is just connection-refused,
+ * which BoS's `bos peers` readiness reports as not-yet-ready — and `main`
+ * heals with one restart the moment LND's gRPC binding appears.
  */
-export const lndSocket = `lnd.startos:${lndGrpcPort}` as const
+export const lndPlaceholderSocket = `127.0.0.1:${lndGrpcPort}` as const
 export const lndCertPath = `${lndMount}/tls.cert` as const
 export const lndMacaroonPath =
   `${lndMount}/data/chain/bitcoin/mainnet/admin.macaroon` as const
