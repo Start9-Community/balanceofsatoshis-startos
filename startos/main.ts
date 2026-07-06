@@ -7,12 +7,7 @@ import { storeJson } from './fileModels/store.json'
 import { telegramApiKey } from './fileModels/telegramApiKey'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
-import {
-  bosHomeDir,
-  bridgeAddress,
-  lndMount,
-  lndPlaceholderSocket,
-} from './utils'
+import { bosHomeDir, bridgeAddress, lndMount } from './utils'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   /**
@@ -27,18 +22,17 @@ export const main = sdk.setupMain(async ({ effects }) => {
    * — never on an LND update, and never on the lock/unlock cycles that leave
    * the binding entry and assigned port intact. LND binds gRPC only after its
    * wallet is first unlocked; until then (and while LND is absent) the address
-   * resolves null and we seed a loopback placeholder, so `bos peers` just
-   * reports not-yet-ready and `main` heals with one restart when LND's gRPC
-   * binding appears. LND's StartOS-issued cert covers its bridge address, so
-   * the pinned gRPC connection still verifies.
+   * resolves null, so we clear `socket` rather than write an unreachable one —
+   * `bos peers` then reports not-yet-ready and `main` heals with one restart
+   * when LND's gRPC binding appears. LND's StartOS-issued cert covers its
+   * bridge address, so the pinned gRPC connection still verifies.
    */
-  const socket =
-    (await bridgeAddress(effects, {
-      packageId: 'lnd',
-      hostId: lndGrpcHostId,
-      internalPort: lndGrpcPort,
-    }).const()) ?? lndPlaceholderSocket
-  await credentialsJson.merge(effects, { socket })
+  const socket = await bridgeAddress(effects, {
+    packageId: 'lnd',
+    hostId: lndGrpcHostId,
+    internalPort: lndGrpcPort,
+  }).const()
+  await credentialsJson.merge(effects, { socket: socket ?? undefined })
 
   const mounts = sdk.Mounts.of()
     .mountVolume({

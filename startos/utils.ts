@@ -1,5 +1,4 @@
 import { T } from '@start9labs/start-sdk'
-import { gRPCPort as lndGrpcPort } from 'lnd-startos/startos/interfaces'
 import { sdk } from './sdk'
 
 /**
@@ -43,7 +42,8 @@ export function bridgeAddress(
         const port =
           host?.bindings[opts.internalPort]?.net.assignedPort ??
           opts.fallbackPort
-        return port != null ? `${osIp}:${port}` : null
+        if (port == null) return null
+        return `${osIp}:${port}`
       },
     )
   }
@@ -56,16 +56,6 @@ export function bridgeAddress(
 export const bosSavedNode = 'embassy' as const
 export const bosHomeDir = '/root' as const
 export const lndMount = '/mnt/lnd' as const
-/**
- * Loopback placeholder for BoS's saved-node `socket`. `main` resolves LND's
- * gRPC bridge address reactively (see `bridgeAddress`) and writes the real
- * `host:port` into credentials.json; this stands in only while LND is absent
- * or before its wallet is first unlocked (gRPC binds at unlock), and as the
- * file model's `.catch()` seed. A dead loopback is just connection-refused,
- * which BoS's `bos peers` readiness reports as not-yet-ready — and `main`
- * heals with one restart the moment LND's gRPC binding appears.
- */
-export const lndPlaceholderSocket = `127.0.0.1:${lndGrpcPort}` as const
 export const lndCertPath = `${lndMount}/tls.cert` as const
 export const lndMacaroonPath =
   `${lndMount}/data/chain/bitcoin/mainnet/admin.macaroon` as const
