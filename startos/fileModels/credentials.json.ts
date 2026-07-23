@@ -1,11 +1,11 @@
 import { FileHelper, z } from '@start9labs/start-sdk'
 import { sdk } from '../sdk'
-import { bosSavedNode, lndCertPath, lndMacaroonPath, lndSocket } from '../utils'
+import { bosSavedNode, lndCertPath, lndMacaroonPath } from '../utils'
 
 const shape = z.object({
   cert_path: z.literal(lndCertPath).catch(lndCertPath),
   macaroon_path: z.literal(lndMacaroonPath).catch(lndMacaroonPath),
-  socket: z.literal(lndSocket).catch(lndSocket),
+  socket: z.string().optional().catch(undefined),
 })
 
 /**

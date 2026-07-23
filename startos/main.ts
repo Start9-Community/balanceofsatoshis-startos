@@ -1,14 +1,38 @@
+import {
+  gRPCHostId as lndGrpcHostId,
+  gRPCPort as lndGrpcPort,
+} from 'lnd-startos/startos/interfaces'
+import { credentialsJson } from './fileModels/credentials.json'
 import { storeJson } from './fileModels/store.json'
 import { telegramApiKey } from './fileModels/telegramApiKey'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
-import { bosHomeDir, lndMount } from './utils'
+import { bosHomeDir, bridgeAddress, lndMount } from './utils'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   /**
    * ======================== Setup ========================
    */
   console.info(i18n('Starting Balance of Satoshis...'))
+
+  /**
+   * Point BoS's saved-node credentials at LND's gRPC over the LXC bridge. The
+   * mapped `host:port` changes only when LND's assigned gRPC port does, so this
+   * `.const()` re-runs `main` exactly on LND install / uninstall / port change
+   * — never on an LND update, and never on the lock/unlock cycles that leave
+   * the binding entry and assigned port intact. LND binds gRPC only after its
+   * wallet is first unlocked; until then (and while LND is absent) the address
+   * resolves null, so we clear `socket` rather than write an unreachable one —
+   * `bos peers` then reports not-yet-ready and `main` heals with one restart
+   * when LND's gRPC binding appears. LND's StartOS-issued cert covers its
+   * bridge address, so the pinned gRPC connection still verifies.
+   */
+  const socket = await bridgeAddress(effects, {
+    packageId: 'lnd',
+    hostId: lndGrpcHostId,
+    internalPort: lndGrpcPort,
+  }).const()
+  await credentialsJson.merge(effects, { socket: socket ?? undefined })
 
   const mounts = sdk.Mounts.of()
     .mountVolume({
@@ -25,7 +49,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       readonly: true,
     })
 
-  const bosSub = await sdk.SubContainer.of(
+  const bosSub = sdk.SubContainer.of(
     effects,
     { imageId: 'balanceofsatoshis' },
     mounts,

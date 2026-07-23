@@ -107,11 +107,22 @@ lets `bos` commands find the saved node without extra flags.
 |---------|---------|---------|
 | `cert_path` | `/mnt/lnd/tls.cert` | LND TLS certificate path |
 | `macaroon_path` | `/mnt/lnd/data/chain/bitcoin/mainnet/admin.macaroon` | LND admin macaroon path |
-| `socket` | `lnd.startos:10009` | LND gRPC socket |
+| `socket` | LND's gRPC bridge address, resolved reactively (absent until it resolves) | LND gRPC socket |
 
-All three values are locked to the correct paths for the bundled LND
-dependency. They are enforced on every merge by `z.literal(...).catch(...)`
-in the file model, so manual edits are corrected automatically.
+`cert_path` and `macaroon_path` are locked to the correct paths for the
+bundled LND dependency, enforced on every merge by `z.literal(...).catch(...)`
+in the file model. `socket` is resolved reactively from LND's gRPC address
+over the LXC bridge and written into the file: the `bridgeAddress` helper in
+`utils.ts` maps LND's exported `gRPCHostId`/`gRPCPort` to
+`10.0.3.1:<assigned port>` and `main` chains `.const()` on it, so the service
+restarts exactly once whenever LND is installed, uninstalled, or moves ports —
+never on an LND update, and never on lock/unlock cycles (the binding entry and
+assigned port survive). LND binds gRPC only after its wallet is first unlocked;
+until then (and while LND is absent) the address resolves null and `socket` is
+left unset rather than pointed at an unreachable placeholder, so `bos peers`
+reports not-yet-ready and `main` heals with one restart when LND's gRPC
+appears. LND's StartOS-issued cert covers its bridge address, so the pinned
+gRPC connection still verifies.
 
 ### Environment Variables (fixed)
 
@@ -129,8 +140,8 @@ from inside the container.
 ## Network Access and Interfaces
 
 Balance of Satoshis does **not** expose any network interface. It is a
-command-line tool that speaks to LND over the private `lnd.startos` gRPC
-socket. No ports are opened on the host, Tor, or LAN.
+command-line tool that speaks to LND's gRPC over the private LXC bridge.
+No ports are opened on the host, Tor, or LAN.
 
 Access is via SSH only.
 
@@ -278,7 +289,7 @@ set and the bot is enabled (see [Telegram](#telegram)).
 
 1. **No web UI.** BoS is CLI-only.
 2. **No external interfaces.** No Tor or LAN interface is declared. BoS
-   speaks to LND over the private `lnd.startos` gRPC socket, plus an
+   speaks to LND's gRPC over the private LXC bridge, plus an
    outbound connection to Telegram's API if the bot is configured.
 3. **Fixed saved-node name.** `BOS_DEFAULT_SAVED_NODE=embassy` is kept
    for backwards compatibility with existing backups and user snippets.
@@ -338,7 +349,7 @@ fixed_config:
   HOME: /root
   credentials.json.cert_path: /mnt/lnd/tls.cert
   credentials.json.macaroon_path: /mnt/lnd/data/chain/bitcoin/mainnet/admin.macaroon
-  credentials.json.socket: lnd.startos:10009
+  credentials.json.socket: LND gRPC bridge address, resolved over the LXC bridge at each start
 telegram_state:
   ~/.bos/telegram_bot_api_key: BotFather API token (managed via telegram-api-key)
   .startos/store.json telegramConnectCode: bot /connect reply (managed via telegram-connect)
