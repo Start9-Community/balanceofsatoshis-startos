@@ -1,5 +1,3 @@
-import { sdk } from './sdk'
-
 export const bosSavedNode = 'embassy' as const
 export const bosHomeDir = '/root' as const
 export const lndMount = '/mnt/lnd' as const
