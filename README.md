@@ -40,12 +40,12 @@ operations. **BoS is a command-line tool only — there is no web UI.**
 
 ## Image and Container Runtime
 
-| Property | Value |
-|----------|-------|
-| Base image | `node:lts-alpine` (built from local `Dockerfile`) |
-| Install method | `npm install -g balanceofsatoshis` |
-| Image source | `dockerBuild` (no upstream Docker image is published) |
-| Architectures | x86_64, aarch64 |
+| Property       | Value                                                 |
+| -------------- | ----------------------------------------------------- |
+| Base image     | `node:lts-alpine` (built from local `Dockerfile`)     |
+| Install method | `npm install -g balanceofsatoshis`                    |
+| Image source   | `dockerBuild` (no upstream Docker image is published) |
+| Architectures  | x86_64, aarch64                                       |
 
 The image installs `balanceofsatoshis` globally via npm. Upstream does not
 publish an official Docker image, so we build one. The pinned release lives
@@ -55,10 +55,10 @@ in the `Dockerfile`.
 
 ## Volume and Data Layout
 
-| Volume | Mount Point | Purpose |
-|--------|-------------|---------|
-| `main` | `/root` | BoS home directory; holds `.bos/embassy/credentials.json` and any saved nodes, notes, and tags |
-| (LND dependency) | `/mnt/lnd` | Read-only access to LND TLS cert and admin macaroon |
+| Volume           | Mount Point | Purpose                                                                                        |
+| ---------------- | ----------- | ---------------------------------------------------------------------------------------------- |
+| `main`           | `/root`     | BoS home directory; holds `.bos/embassy/credentials.json` and any saved nodes, notes, and tags |
+| (LND dependency) | `/mnt/lnd`  | Read-only access to LND TLS cert and admin macaroon                                            |
 
 BoS runs as root inside the container. This is required so it can read
 LND's root-owned `0600` `admin.macaroon`, which is mounted read-only and
@@ -77,11 +77,11 @@ lets `bos` commands find the saved node without extra flags.
 
 ## Installation and First-Run Flow
 
-| Step | Upstream | StartOS |
-|------|----------|---------|
-| Installation | `npm install -g balanceofsatoshis` | Install from marketplace |
-| LND connection | Manual `credentials.json` | Auto-generated with correct paths |
-| Access | Local shell | SSH to server, exec into container |
+| Step           | Upstream                           | StartOS                            |
+| -------------- | ---------------------------------- | ---------------------------------- |
+| Installation   | `npm install -g balanceofsatoshis` | Install from marketplace           |
+| LND connection | Manual `credentials.json`          | Auto-generated with correct paths  |
+| Access         | Local shell                        | SSH to server, exec into container |
 
 **First-run steps:**
 
@@ -103,16 +103,16 @@ lets `bos` commands find the saved node without extra flags.
 
 ### credentials.json (auto-generated)
 
-| Setting | Default | Purpose |
-|---------|---------|---------|
-| `cert_path` | `/mnt/lnd/tls.cert` | LND TLS certificate path |
-| `macaroon_path` | `/mnt/lnd/data/chain/bitcoin/mainnet/admin.macaroon` | LND admin macaroon path |
-| `socket` | LND's gRPC bridge address, resolved reactively (absent until it resolves) | LND gRPC socket |
+| Setting         | Default                                                                   | Purpose                  |
+| --------------- | ------------------------------------------------------------------------- | ------------------------ |
+| `cert_path`     | `/mnt/lnd/tls.cert`                                                       | LND TLS certificate path |
+| `macaroon_path` | `/mnt/lnd/data/chain/bitcoin/mainnet/admin.macaroon`                      | LND admin macaroon path  |
+| `socket`        | LND's gRPC bridge address, resolved reactively (absent until it resolves) | LND gRPC socket          |
 
 `cert_path` and `macaroon_path` are locked to the correct paths for the
 bundled LND dependency, enforced on every merge by `z.literal(...).catch(...)`
 in the file model. `socket` is resolved reactively from LND's gRPC address
-over the LXC bridge and written into the file: the `bridgeAddress` helper in
+over the LXC bridge and written into the file: `sdk.host.getBridgeAddress` in
 `utils.ts` maps LND's exported `gRPCHostId`/`gRPCPort` to
 `10.0.3.1:<assigned port>` and `main` chains `.const()` on it, so the service
 restarts exactly once whenever LND is installed, uninstalled, or moves ports —
@@ -126,10 +126,10 @@ gRPC connection still verifies.
 
 ### Environment Variables (fixed)
 
-| Variable | Value | Purpose |
-|----------|-------|---------|
+| Variable                 | Value     | Purpose                                      |
+| ------------------------ | --------- | -------------------------------------------- |
 | `BOS_DEFAULT_SAVED_NODE` | `embassy` | Default saved-node directory under `~/.bos/` |
-| `HOME` | `/root` | Anchors `~/.bos` to the `main` volume |
+| `HOME`                   | `/root`   | Anchors `~/.bos` to the `main` volume        |
 
 There is no user-visible configuration. Advanced users can create
 additional saved nodes by writing to `/root/.bos/<name>/credentials.json`
@@ -149,9 +149,9 @@ Access is via SSH only.
 
 ## Dependencies
 
-| Dependency | Required | Purpose |
-|------------|----------|---------|
-| LND | Required | Lightning node to manage |
+| Dependency | Required | Purpose                  |
+| ---------- | -------- | ------------------------ |
+| LND        | Required | Lightning node to manage |
 
 The LND `main` volume is mounted read-only into the BoS container at
 `/mnt/lnd`. BoS uses the admin macaroon, so all destructive LND
@@ -175,44 +175,44 @@ sanitizer strips `style`/`class`, so no scrollbar can be added package-side).
 
 **Balance & Liquidity**
 
-| Action | Command |
-|--------|---------|
-| Show Balance | `bos balance --detailed` |
-| Show Inbound Liquidity | `bos inbound-liquidity` |
+| Action                  | Command                  |
+| ----------------------- | ------------------------ |
+| Show Balance            | `bos balance --detailed` |
+| Show Inbound Liquidity  | `bos inbound-liquidity`  |
 | Show Outbound Liquidity | `bos outbound-liquidity` |
-| Show Report | `bos report` |
+| Show Report             | `bos report`             |
 
 **Forwards & Earnings**
 
-| Action | Command |
-|--------|---------|
-| Show Forwards | `bos forwards` |
-| Show Fees Earned | `bos chart-fees-earned` |
+| Action                 | Command                       |
+| ---------------------- | ----------------------------- |
+| Show Forwards          | `bos forwards`                |
+| Show Fees Earned       | `bos chart-fees-earned`       |
 | Show Payments Received | `bos chart-payments-received` |
 
 **On-chain Inspection**
 
-| Action | Command |
-|--------|---------|
-| Show Peers | `bos peers` |
-| Show UTXOs | `bos utxos` |
-| Show Chain Fees | `bos chainfees` |
-| Show Closed Channels | `bos closed` |
+| Action               | Command         |
+| -------------------- | --------------- |
+| Show Peers           | `bos peers`     |
+| Show UTXOs           | `bos utxos`     |
+| Show Chain Fees      | `bos chainfees` |
+| Show Closed Channels | `bos closed`    |
 
 **Telegram**
 
-| Action | Effect |
-|--------|--------|
-| Set Telegram API Key | Writes `~/.bos/telegram_bot_api_key` (run first) |
-| Connect Telegram | Saves the `/connect` code to `store.json`, bringing the bot up |
+| Action                    | Effect                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| Set Telegram API Key      | Writes `~/.bos/telegram_bot_api_key` (run first)                                       |
+| Connect Telegram          | Saves the `/connect` code to `store.json`, bringing the bot up                         |
 | Enable / Disable Telegram | Toggles the bot on/off without discarding credentials (hidden until an API key is set) |
 
 **Discovery (ungrouped)**
 
-| Action | Command |
-|--------|---------|
+| Action       | Command         |
+| ------------ | --------------- |
 | Show Version | `bos --version` |
-| Show Help | `bos help` |
+| Show Help    | `bos help`      |
 
 All other BoS functionality is available from inside the container shell.
 
@@ -227,11 +227,11 @@ reconnects automatically after restarts.
 
 **State (on the `main` volume):**
 
-| Location | Holds | Written by |
-|----------|-------|-----------|
-| `~/.bos/telegram_bot_api_key` | BotFather API token | Set Telegram API Key action (BoS reads it from here directly) |
-| `.startos/store.json` `telegramConnectCode` | `/connect` code | Connect Telegram action |
-| `.startos/store.json` `telegramEnabled` | on/off flag (absent/`true` = on) | Enable / Disable Telegram action |
+| Location                                    | Holds                            | Written by                                                    |
+| ------------------------------------------- | -------------------------------- | ------------------------------------------------------------- |
+| `~/.bos/telegram_bot_api_key`               | BotFather API token              | Set Telegram API Key action (BoS reads it from here directly) |
+| `.startos/store.json` `telegramConnectCode` | `/connect` code                  | Connect Telegram action                                       |
+| `.startos/store.json` `telegramEnabled`     | on/off flag (absent/`true` = on) | Enable / Disable Telegram action                              |
 
 **Mechanism:**
 
@@ -240,7 +240,7 @@ reconnects automatically after restarts.
 - The `telegram` daemon is added only when an API key is set **and** the bot is
   enabled. It shares `bosSub` (both daemons `spawn`, so no leader conflict) and
   is supervised — StartOS restarts it on crash. Liveness is the `pgrep -f
-  telegram` health check. It deliberately does **not** depend on `primary`
+telegram` health check. It deliberately does **not** depend on `primary`
   (`requires: []`): tying it to primary's `bos peers` readiness caused the bot
   to be torn down and reconnected on every transient readiness flap.
 - Two phases:
@@ -274,10 +274,10 @@ BoS — to preserve your on-chain and channel state.
 
 ## Health Checks
 
-| Check | Display Name | Method | Messages |
-|-------|--------------|--------|----------|
-| Primary daemon | Command Line | Runs `bos peers` in the daemon subcontainer | Ready / Not responding |
-| Telegram daemon | Telegram Bot | Runs `pgrep -f telegram` (only present when the bot is configured) | Running / Not running |
+| Check           | Display Name | Method                                                             | Messages               |
+| --------------- | ------------ | ------------------------------------------------------------------ | ---------------------- |
+| Primary daemon  | Command Line | Runs `bos peers` in the daemon subcontainer                        | Ready / Not responding |
+| Telegram daemon | Telegram Bot | Runs `pgrep -f telegram` (only present when the bot is configured) | Running / Not running  |
 
 A successful `bos peers` invocation means BoS can reach LND using the
 generated credentials. The Telegram Bot check appears only when an API key is
