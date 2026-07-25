@@ -112,9 +112,9 @@ lets `bos` commands find the saved node without extra flags.
 `cert_path` and `macaroon_path` are locked to the correct paths for the
 bundled LND dependency, enforced on every merge by `z.literal(...).catch(...)`
 in the file model. `socket` is resolved reactively from LND's gRPC address
-over the LXC bridge and written into the file: `sdk.host.getBridgeAddress` in
-`utils.ts` maps LND's exported `gRPCHostId`/`gRPCPort` to
-`10.0.3.1:<assigned port>` and `main` chains `.const()` on it, so the service
+over the LXC bridge and written into the file: `main.ts` passes LND's exported
+`gRPCHostId`/`gRPCPort` to `sdk.host.getBridgeAddress`, which maps them to
+`10.0.3.1:<assigned port>`, and chains `.const()` on it, so the service
 restarts exactly once whenever LND is installed, uninstalled, or moves ports —
 never on an LND update, and never on lock/unlock cycles (the binding entry and
 assigned port survive). LND binds gRPC only after its wallet is first unlocked;
