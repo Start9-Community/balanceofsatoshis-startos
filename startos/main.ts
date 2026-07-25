@@ -7,7 +7,7 @@ import { storeJson } from './fileModels/store.json'
 import { telegramApiKey } from './fileModels/telegramApiKey'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
-import { bosHomeDir, bridgeAddress, lndMount } from './utils'
+import { bosHomeDir, lndMount } from './utils'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   /**
@@ -27,11 +27,13 @@ export const main = sdk.setupMain(async ({ effects }) => {
    * when LND's gRPC binding appears. LND's StartOS-issued cert covers its
    * bridge address, so the pinned gRPC connection still verifies.
    */
-  const socket = await bridgeAddress(effects, {
-    packageId: 'lnd',
-    hostId: lndGrpcHostId,
-    internalPort: lndGrpcPort,
-  }).const()
+  const socket = await sdk.host
+    .getBridgeAddress(effects, {
+      packageId: 'lnd',
+      hostId: lndGrpcHostId,
+      internalPort: lndGrpcPort,
+    })
+    .const()
   await credentialsJson.merge(effects, { socket: socket ?? undefined })
 
   const mounts = sdk.Mounts.of()
