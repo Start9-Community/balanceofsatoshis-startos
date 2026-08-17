@@ -4,19 +4,15 @@
 
 # Balance of Satoshis on StartOS
 
-> **Upstream docs:** <https://github.com/alexbosworth/balanceofsatoshis#readme>
->
-> **Command reference:** <https://github.com/alexbosworth/balanceofsatoshis/blob/master/commands/README.md>
->
 > Everything not listed in this document should behave the same as upstream
 > Balance of Satoshis. If a feature, setting, or behavior is not mentioned
-> here, the upstream documentation is accurate and fully applicable.
+> here, the upstream documentation is accurate and fully applicable — see the
+> Documentation section of `instructions.md` for links.
 
-[Balance of Satoshis](https://github.com/alexbosworth/balanceofsatoshis)
-(BoS) is a command-line tool for working with balances on a self-hosted
-LND Lightning node. It lets you open balanced channels, manage fees,
-inspect HTLCs, and perform a wide range of advanced routing and liquidity
-operations. **BoS is a command-line tool only — there is no web UI.**
+[Balance of Satoshis](https://github.com/alexbosworth/balanceofsatoshis) (BoS) is a command-line tool for operating a self-hosted LND Lightning node — balanced channel opens, fee management, HTLC inspection, and a large set of routing and liquidity operations. This package installs the CLI, wires it to the LND on the same server, and adds an optional Telegram bot. **There is no web interface**: day-to-day use is a shell inside the container.
+
+- **Upstream repo:** <https://github.com/alexbosworth/balanceofsatoshis>
+- **Wrapper repo:** <https://github.com/Start9-Community/balanceofsatoshis-startos>
 
 ---
 
@@ -24,287 +20,188 @@ operations. **BoS is a command-line tool only — there is no web UI.**
 
 - [Image and Container Runtime](#image-and-container-runtime)
 - [Volume and Data Layout](#volume-and-data-layout)
-- [Installation and First-Run Flow](#installation-and-first-run-flow)
-- [Configuration Management](#configuration-management)
-- [Network Access and Interfaces](#network-access-and-interfaces)
+- [File Models](#file-models)
 - [Dependencies](#dependencies)
+- [Network Access and Interfaces](#network-access-and-interfaces)
+- [Installation and First-Run Flow](#installation-and-first-run-flow)
 - [Actions](#actions)
-- [Telegram](#telegram)
-- [Backups and Restore](#backups-and-restore)
+- [Tasks](#tasks)
 - [Health Checks](#health-checks)
+- [Backups and Restore](#backups-and-restore)
 - [Limitations and Differences](#limitations-and-differences)
-- [What Is Unchanged from Upstream](#what-is-unchanged-from-upstream)
 - [Quick Reference for AI Consumers](#quick-reference-for-ai-consumers)
 
 ---
 
 ## Image and Container Runtime
 
-| Property       | Value                                                 |
-| -------------- | ----------------------------------------------------- |
-| Base image     | `node:lts-alpine` (built from local `Dockerfile`)     |
-| Install method | `npm install -g balanceofsatoshis`                    |
-| Image source   | `dockerBuild` (no upstream Docker image is published) |
-| Architectures  | x86_64, aarch64                                       |
+One image, built here rather than pulled — upstream publishes no Docker image, so the package installs the npm release into a Node Alpine base.
 
-The image installs `balanceofsatoshis` globally via npm. Upstream does not
-publish an official Docker image, so we build one. The pinned release lives
-in the `Dockerfile`.
+| Property      | Value                                   |
+| ------------- | --------------------------------------- |
+| Image         | Built from this repo's `Dockerfile`     |
+| Architectures | x86_64, aarch64                         |
+| Command       | `tail -f /dev/null` for the idle daemon |
 
----
+| Subcontainer            | Purpose                                                                     |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `balanceofsatoshis-sub` | Both daemons — the one to `attach` to for a `bos` shell                     |
+| `bos-<command>`         | One temporary container per reporting action, named for the command it runs |
+
+**The `primary` daemon does no work.** It runs `tail -f /dev/null` purely to keep the subcontainer alive so a user can attach a shell to it; the actual functionality is whatever `bos` command they then type. Its readiness check is the useful part — see [Health Checks](#health-checks).
+
+BoS runs as **root** in the container. That is required, not incidental: LND's `admin.macaroon` is root-owned and mode `0600` on a read-only mount, so it cannot be re-permissioned from this side.
+
+The image's `BOS_DEFAULT_SAVED_NODE` is baked into the `Dockerfile`, not set by StartOS — the package passes no environment to the daemon at all.
 
 ## Volume and Data Layout
 
-| Volume           | Mount Point | Purpose                                                                                        |
-| ---------------- | ----------- | ---------------------------------------------------------------------------------------------- |
-| `main`           | `/root`     | BoS home directory; holds `.bos/embassy/credentials.json` and any saved nodes, notes, and tags |
-| (LND dependency) | `/mnt/lnd`  | Read-only access to LND TLS cert and admin macaroon                                            |
+One volume, mounted as the container's home directory, plus a read-only view of LND's.
 
-BoS runs as root inside the container. This is required so it can read
-LND's root-owned `0600` `admin.macaroon`, which is mounted read-only and
-cannot be re-permissioned from this side.
+| Volume            | Mount Point | Purpose                                                        |
+| ----------------- | ----------- | -------------------------------------------------------------- |
+| `main`            | `/root`     | BoS's whole home — saved nodes, tags, notes, and package state |
+| LND's `main` (ro) | `/mnt/lnd`  | LND's TLS certificate and admin macaroon                       |
 
-**Key paths on the `main` volume:**
+Mounting `main` at `/root` is what makes BoS's own conventions work unchanged: everything it expects under `~/.bos` is on the volume, and therefore in every backup, without the package having to relocate anything.
 
-- `.bos/embassy/credentials.json` — how BoS reaches LND (managed by StartOS)
-- `.bos/telegram_bot_api_key` — the Telegram bot API key (managed by the Set Telegram API Key action; read by BoS directly)
-- `.startos/store.json` — package state managed by StartOS (the saved Telegram connect code and on/off flag; see [Telegram](#telegram))
+| Path on `main`                  | Holds                                                 |
+| ------------------------------- | ----------------------------------------------------- |
+| `.bos/embassy/credentials.json` | How BoS reaches LND — package-managed                 |
+| `.bos/telegram_bot_api_key`     | The Telegram bot token — package-managed, read by BoS |
+| `.startos/store.json`           | Package state: Telegram connect code and on/off flag  |
 
-`BOS_DEFAULT_SAVED_NODE=embassy` is set in the daemon environment, which
-lets `bos` commands find the saved node without extra flags.
+The saved node is named `embassy`, kept from the 0.3.5.1 package so existing backups and users' own command snippets keep working.
 
----
+## File Models
 
-## Installation and First-Run Flow
+Three models, and the split between them is deliberate: two are files **BoS itself reads**, one is state only StartOS reads.
 
-| Step           | Upstream                           | StartOS                            |
-| -------------- | ---------------------------------- | ---------------------------------- |
-| Installation   | `npm install -g balanceofsatoshis` | Install from marketplace           |
-| LND connection | Manual `credentials.json`          | Auto-generated with correct paths  |
-| Access         | Local shell                        | SSH to server, exec into container |
+| File                            | Format | Modelled                  | Written by                             |
+| ------------------------------- | ------ | ------------------------- | -------------------------------------- |
+| `.bos/embassy/credentials.json` | JSON   | Yes — `FileHelper.json`   | Init and `main`                        |
+| `.bos/telegram_bot_api_key`     | text   | Yes — `FileHelper.string` | The Set Telegram API Key action        |
+| `.startos/store.json`           | JSON   | Yes — `FileHelper.json`   | The Connect and Enable/Disable actions |
 
-**First-run steps:**
+### `credentials.json` — the package owns it, entirely
 
-1. Install LND on StartOS and let it finish syncing.
-2. Install Balance of Satoshis from the marketplace. Read the install
-   alert — this service is SSH-only.
-3. Configure an SSH key on your StartOS server.
-4. SSH into the server and attach to the BoS subcontainer:
+`cert_path` and `macaroon_path` are `z.literal(...).catch(...)`, so a hand-edited value is not merely overwritten on the next write — it is **repaired on read**. Point them elsewhere and they come back. This is intentional: they can only ever be the mount points of the LND dependency.
 
-   ```bash
-   start-cli package attach balanceofsatoshis
-   ```
+`socket` is resolved reactively rather than written once. `main` asks StartOS for LND's gRPC bridge address and chains `.const()` on the result, so the service re-runs exactly when that address changes — on LND install, uninstall, or a port reassignment — and **not** on an LND update, nor on the lock/unlock cycles that leave the binding and its assigned port intact.
 
-5. Run `bos help` to see the full command list.
+When LND is absent, or present but never yet unlocked, that address resolves to nothing. The package then **clears** `socket` rather than writing a placeholder, so the failure is visible as "not ready" instead of as a connection to an address that does not exist. When LND's gRPC appears, `main` heals with a single restart.
 
----
+### The Telegram files
 
-## Configuration Management
+The API key is a plain one-line file because that is what BoS reads; the connect code and the on/off flag are package state and live in `store.json`. They are split for that reason and not by preference — putting the key in `store.json` would mean writing it out to BoS's location anyway.
 
-### credentials.json (auto-generated)
+All three are read by `main` through `.const()`, which is what makes every Telegram action take effect without a manual restart: writing the file re-runs `main`, and `main` rebuilds the daemon set.
 
-| Setting         | Default                                                                   | Purpose                  |
-| --------------- | ------------------------------------------------------------------------- | ------------------------ |
-| `cert_path`     | `/mnt/lnd/tls.cert`                                                       | LND TLS certificate path |
-| `macaroon_path` | `/mnt/lnd/data/chain/bitcoin/mainnet/admin.macaroon`                      | LND admin macaroon path  |
-| `socket`        | LND's gRPC bridge address, resolved reactively (absent until it resolves) | LND gRPC socket          |
-
-`cert_path` and `macaroon_path` are locked to the correct paths for the
-bundled LND dependency, enforced on every merge by `z.literal(...).catch(...)`
-in the file model. `socket` is resolved reactively from LND's gRPC address
-over the LXC bridge and written into the file: `main.ts` passes LND's exported
-`gRPCHostId`/`gRPCPort` to `sdk.host.getBridgeAddress`, which maps them to
-`10.0.3.1:<assigned port>`, and chains `.const()` on it, so the service
-restarts exactly once whenever LND is installed, uninstalled, or moves ports —
-never on an LND update, and never on lock/unlock cycles (the binding entry and
-assigned port survive). LND binds gRPC only after its wallet is first unlocked;
-until then (and while LND is absent) the address resolves null and `socket` is
-left unset rather than pointed at an unreachable placeholder, so `bos peers`
-reports not-yet-ready and `main` heals with one restart when LND's gRPC
-appears. LND's StartOS-issued cert covers its bridge address, so the pinned
-gRPC connection still verifies.
-
-### Environment Variables (fixed)
-
-| Variable                 | Value     | Purpose                                      |
-| ------------------------ | --------- | -------------------------------------------- |
-| `BOS_DEFAULT_SAVED_NODE` | `embassy` | Default saved-node directory under `~/.bos/` |
-| `HOME`                   | `/root`   | Anchors `~/.bos` to the `main` volume        |
-
-There is no user-visible configuration. Advanced users can create
-additional saved nodes by writing to `/root/.bos/<name>/credentials.json`
-from inside the container.
-
----
-
-## Network Access and Interfaces
-
-Balance of Satoshis does **not** expose any network interface. It is a
-command-line tool that speaks to LND's gRPC over the private LXC bridge.
-No ports are opened on the host, Tor, or LAN.
-
-Access is via SSH only.
-
----
+An absent `telegramEnabled` counts as **enabled**, so the bot starts as soon as a key exists rather than needing a second action.
 
 ## Dependencies
 
-| Dependency | Required | Purpose                  |
-| ---------- | -------- | ------------------------ |
-| LND        | Required | Lightning node to manage |
+One, and it is required.
 
-The LND `main` volume is mounted read-only into the BoS container at
-`/mnt/lnd`. BoS uses the admin macaroon, so all destructive LND
-operations are available.
+| Dependency | Required | Health checks required | Mounted                         | Why                      |
+| ---------- | -------- | ---------------------- | ------------------------------- | ------------------------ |
+| LND        | Yes      | `lnd`                  | `main`, read-only at `/mnt/lnd` | The node BoS operates on |
 
----
+BoS uses LND's **admin** macaroon, so every destructive operation LND offers is available to anyone who can run `bos` here. Treat shell access to this service as equivalent to full control of the node.
+
+The dependency is declared `kind: 'running'` — BoS will not start until LND is up and its health check passes.
+
+## Network Access and Interfaces
+
+**None.** `setInterfaces` returns an empty array: the package binds no port and publishes no address, on LAN, Tor, or clearnet.
+
+Traffic still leaves the container in two directions — gRPC to LND over the private bridge, and, if the bot is configured, outbound HTTPS to Telegram's API. Neither is an inbound interface, so there is nothing to expose or to secure at the network layer.
+
+Access is therefore SSH to the server plus `start-cli package attach`.
+
+## Installation and First-Run Flow
+
+Install seeds `credentials.json` with its fixed paths and nothing else. There is no wizard, no credential to record, and no task.
+
+What matters is the **order**: LND must exist and have been unlocked at least once before BoS has an address to connect to. A BoS installed first is not broken — it comes up, reports not-ready, and heals on its own once LND's gRPC binding appears.
+
+Because there is no interface, the first genuinely useful step happens outside the StartOS UI: attach a shell and run `bos peers`. An SSH key configured on the server is a prerequisite for using this package at all.
 
 ## Actions
 
-The StartOS UI surfaces convenience actions, grouped by purpose. The reporting
-actions are read-only shortcuts that run a single `bos` command and print its
-output — they exist so users can glance at node state without attaching a
-shell, **not** as a replacement for the CLI. The Telegram actions configure the
-optional bot (see [Telegram](#telegram)).
+Sixteen actions in four groups. Thirteen are read-only reporting shortcuts; three configure the Telegram bot.
 
-Reporting output is HTML-escaped and wrapped in a `<pre>` tag by
-`formatBosOutput` ([`utils.ts`](startos/utils.ts)); the StartOS action-result
-modal renders it via `[innerHTML]`, so `<pre>` is what yields monospace +
-preserved layout. Lines wider than the modal overflow horizontally (the
-sanitizer strips `style`/`class`, so no scrollbar can be added package-side).
+### Reporting actions
 
-**Balance & Liquidity**
+**Balance & Liquidity:** Show Balance, Show Inbound Liquidity, Show Outbound Liquidity, Show Report.
+**Forwards & Earnings:** Show Forwards, Show Fees Earned, Show Payments Received.
+**On-chain Inspection:** Show Peers, Show UTXOs, Show Chain Fees, Show Closed Channels.
+**Ungrouped:** Show Version, Show Help.
 
-| Action                  | Command                  |
-| ----------------------- | ------------------------ |
-| Show Balance            | `bos balance --detailed` |
-| Show Inbound Liquidity  | `bos inbound-liquidity`  |
-| Show Outbound Liquidity | `bos outbound-liquidity` |
-| Show Report             | `bos report`             |
+Each runs one `bos` command in a temporary container and prints its output.
 
-**Forwards & Earnings**
+- **When to run them:** to glance at node state without attaching a shell. They are a convenience, not a replacement for the CLI — every other `bos` capability is shell-only.
+- **What they change:** nothing. The volume is mounted **read-only** for these, so they cannot write even by accident.
+- **Cost:** one container start each, seconds. All but Show Version and Show Help are `only-running`, because they need LND.
+- **Repeat safety:** fully idempotent.
+- **Output shape:** command text, HTML-escaped and wrapped in `<pre>`. StartOS renders an action result through a sanitizer that strips `style` and `class`, so wide output overflows horizontally and nothing package-side can add wrapping or a scrollbar. Prefer the shell for anything wide.
 
-| Action                 | Command                       |
-| ---------------------- | ----------------------------- |
-| Show Forwards          | `bos forwards`                |
-| Show Fees Earned       | `bos chart-fees-earned`       |
-| Show Payments Received | `bos chart-payments-received` |
+### Set Telegram API Key
 
-**On-chain Inspection**
+Stores the bot token from BotFather. Run it first — the other two Telegram actions do nothing without it.
 
-| Action               | Command         |
-| -------------------- | --------------- |
-| Show Peers           | `bos peers`     |
-| Show UTXOs           | `bos utxos`     |
-| Show Chain Fees      | `bos chainfees` |
-| Show Closed Channels | `bos closed`    |
+- **What it changes:** writes `~/.bos/telegram_bot_api_key`, which starts the bot daemon.
+- **Repeat safety:** idempotent; the last token wins. Re-running with a different token repoints the bot.
+- **What happens next:** the bot comes up unconnected, so you can message it `/connect` and receive a code.
 
-**Telegram**
+### Connect Telegram
 
-| Action                    | Effect                                                                                 |
-| ------------------------- | -------------------------------------------------------------------------------------- |
-| Set Telegram API Key      | Writes `~/.bos/telegram_bot_api_key` (run first)                                       |
-| Connect Telegram          | Saves the `/connect` code to `store.json`, bringing the bot up                         |
-| Enable / Disable Telegram | Toggles the bot on/off without discarding credentials (hidden until an API key is set) |
+Saves the numeric code the bot replies with. Run it after Set Telegram API Key.
 
-**Discovery (ungrouped)**
+- **What it changes:** `telegramConnectCode` in the store, which restarts the bot with `--connect`.
+- **Why the package stores it at all:** BoS does not persist the pairing itself, so without this the bot would need re-connecting by hand after every restart.
+- **Repeat safety:** idempotent; re-runnable if you re-pair.
 
-| Action       | Command         |
-| ------------ | --------------- |
-| Show Version | `bos --version` |
-| Show Help    | `bos help`      |
+### Enable / Disable Telegram
 
-All other BoS functionality is available from inside the container shell.
+One action that reads its own name from current state, so it presents as whichever the opposite of the present setting is.
 
----
+- **Hidden until an API key exists** — there is nothing to toggle before that.
+- **What it changes:** `telegramEnabled` in the store, adding or removing the bot daemon.
+- **What it does not change:** the API key and connect code are kept, so re-enabling is one click rather than a re-pairing.
 
-## Telegram
+## Tasks
 
-BoS can post node activity to a Telegram bot and accept commands from it
-(upstream `bos telegram`). The whole flow is driven by actions — no shell
-required — and the [bot](https://github.com/alexbosworth/balanceofsatoshis/blob/master/telegram/README.md)
-reconnects automatically after restarts.
-
-**State (on the `main` volume):**
-
-| Location                                    | Holds                            | Written by                                                    |
-| ------------------------------------------- | -------------------------------- | ------------------------------------------------------------- |
-| `~/.bos/telegram_bot_api_key`               | BotFather API token              | Set Telegram API Key action (BoS reads it from here directly) |
-| `.startos/store.json` `telegramConnectCode` | `/connect` code                  | Connect Telegram action                                       |
-| `.startos/store.json` `telegramEnabled`     | on/off flag (absent/`true` = on) | Enable / Disable Telegram action                              |
-
-**Mechanism:**
-
-- `main` reads the API key and store via the file models (`.const`), so writing
-  any of them re-runs `main` and rebuilds the daemon set — no manual restart.
-- The `telegram` daemon is added only when an API key is set **and** the bot is
-  enabled. It shares `bosSub` (both daemons `spawn`, so no leader conflict) and
-  is supervised — StartOS restarts it on crash. Liveness is the `pgrep -f
-telegram` health check. It deliberately does **not** depend on `primary`
-  (`requires: []`): tying it to primary's `bos peers` readiness caused the bot
-  to be torn down and reconnected on every transient readiness flap.
-- Two phases:
-  - **API key, no connect code** → `bos telegram`. The bot runs so you can
-    message it `/connect` and obtain your code.
-  - **API key + connect code** → `bos telegram --connect <code>`. Fully
-    connected, and auto-resumes on every restart.
-- Disabling (Enable / Disable Telegram) drops the daemon but keeps the API key
-  and connect code, so re-enabling is one click.
-
-End-user setup steps live in `instructions.md`.
-
----
-
-## Backups and Restore
-
-**Included in backup:**
-
-- `main` volume — credentials.json, saved nodes, notes, and tags
-
-**Restore behavior:**
-
-- Configuration restored; `credentials.json` re-validates against the
-  schema on next start, correcting paths automatically if LND's layout
-  has changed.
-
-**Note:** BoS stores no funds. All funds reside in LND. Back up LND — not
-BoS — to preserve your on-chain and channel state.
-
----
+None. This package raises no tasks, so the service is never held on a prompt and its ordinary controls are always available.
 
 ## Health Checks
 
-| Check           | Display Name | Method                                                             | Messages               |
-| --------------- | ------------ | ------------------------------------------------------------------ | ---------------------- |
-| Primary daemon  | Command Line | Runs `bos peers` in the daemon subcontainer                        | Ready / Not responding |
-| Telegram daemon | Telegram Bot | Runs `pgrep -f telegram` (only present when the bot is configured) | Running / Not running  |
+Two checks, and the second exists only when the bot does.
 
-A successful `bos peers` invocation means BoS can reach LND using the
-generated credentials. The Telegram Bot check appears only when an API key is
-set and the bot is enabled (see [Telegram](#telegram)).
+| Check      | Displayed as   | Method                                | Grace Period |
+| ---------- | -------------- | ------------------------------------- | ------------ |
+| `primary`  | "Command Line" | `bos peers` exits 0 in the container  | 15s          |
+| `telegram` | "Telegram Bot" | `pgrep -f telegram` finds the process | 30s          |
 
----
+**"Command Line" is really an LND-reachability check.** `bos peers` only succeeds if the credentials resolve and LND answers, so a failure means one of: LND not installed, LND never unlocked, or LND unreachable — not that the CLI is broken. It reports `loading` rather than `failure` in that case, so the service is not restarted while it waits for LND.
+
+The Telegram check appears only when an API key is set and the bot is enabled. Its absence is a configuration state, not a fault.
+
+## Backups and Restore
+
+The `main` volume is copied wholesale — `sdk.Backups.ofVolumes('main')`. That covers saved nodes, tags, notes, the Telegram credentials, and `credentials.json`.
+
+**BoS holds no funds.** Every satoshi is LND's; this package only operates on them. A backup of BoS restores your working setup, not your money — LND's backup is what protects the node.
+
+A restored instance self-corrects its connection: `credentials.json` re-validates its fixed paths on read, and `socket` is re-resolved from whatever address LND has on the new box. Nothing needs re-entering, including the Telegram pairing.
 
 ## Limitations and Differences
 
-1. **No web UI.** BoS is CLI-only.
-2. **No external interfaces.** No Tor or LAN interface is declared. BoS
-   speaks to LND's gRPC over the private LXC bridge, plus an
-   outbound connection to Telegram's API if the bot is configured.
-3. **Fixed saved-node name.** `BOS_DEFAULT_SAVED_NODE=embassy` is kept
-   for backwards compatibility with existing backups and user snippets.
-4. **Minimal user config.** Connection settings are derived from the
-   bundled LND dependency; the only user-supplied settings are the optional
-   Telegram API key, connect code, and on/off flag (see [Telegram](#telegram)).
-
----
-
-## What Is Unchanged from Upstream
-
-- Every `bos` subcommand (see the upstream command reference)
-- All routing, liquidity, channel management, and reporting features
-- gRPC communication with LND via the admin macaroon
-- Saved-node files, tags, and notes stored under `~/.bos/`
+1. **No web interface and no network interface.** The package declares none, so there is nothing to open from the StartOS UI. Everything is CLI over SSH.
+2. **Root inside the container, with LND's admin macaroon.** Shell access here is full control of the Lightning node.
+3. **The saved node name is fixed** as `embassy`, for backwards compatibility with the previous package generation. Additional saved nodes can be created by hand under `~/.bos/`, but the package manages only this one.
+4. **The reporting actions cover a fraction of `bos`.** They are shortcuts for common read-only commands; anything else needs the shell.
+5. **Action output cannot wrap or scroll.** StartOS's result modal strips the styling that would allow it, so wide tables overflow.
 
 ---
 
@@ -312,13 +209,23 @@ set and the bot is enabled (see [Telegram](#telegram)).
 
 ```yaml
 package_id: balanceofsatoshis
-image: local-dockerBuild (node:lts-alpine + npm balanceofsatoshis)
-architectures: [x86_64, aarch64]
+image: built from ./Dockerfile # node alpine + npm balanceofsatoshis
+architectures:
+  - x86_64
+  - aarch64
+subcontainers:
+  - balanceofsatoshis-sub # both daemons
+  - bos-* # one temporary container per reporting action
 volumes:
-  main: /root
-ports: []
+  main: /root # BoS home; LND's main volume is mounted read-only at /mnt/lnd
+file_models:
+  - .bos/embassy/credentials.json
+  - .bos/telegram_bot_api_key
+  - .startos/store.json
+startos_managed_env_vars: [] # BOS_DEFAULT_SAVED_NODE is baked into the image
 dependencies:
-  lnd (required; see manifest for version range)
+  - lnd # required, kind: running
+interfaces: {} # none declared
 actions:
   - show-balance
   - show-inbound-liquidity
@@ -333,26 +240,11 @@ actions:
   - show-closed-channels
   - telegram-api-key
   - telegram-connect
-  - telegram-toggle
+  - telegram-toggle # hidden until an API key is set
   - show-version
   - show-help
-daemons:
-  - primary: tail -f /dev/null (readiness via `bos peers`)
-  - telegram: bos telegram [--connect <code>] (present only when api key set AND enabled; shares bosSub; requires: [] so primary flaps don't restart it; auto-resumes)
+tasks: []
 health_checks:
-  - primary: bos peers exit == 0
-  - telegram: pgrep -f telegram exit == 0 (only when bot configured)
-backup_volumes:
-  - main
-fixed_config:
-  BOS_DEFAULT_SAVED_NODE: embassy
-  HOME: /root
-  credentials.json.cert_path: /mnt/lnd/tls.cert
-  credentials.json.macaroon_path: /mnt/lnd/data/chain/bitcoin/mainnet/admin.macaroon
-  credentials.json.socket: LND gRPC bridge address, resolved over the LXC bridge at each start
-telegram_state:
-  ~/.bos/telegram_bot_api_key: BotFather API token (managed via telegram-api-key)
-  .startos/store.json telegramConnectCode: bot /connect reply (managed via telegram-connect)
-  .startos/store.json telegramEnabled: on/off flag, absent = enabled (managed via telegram-toggle)
-access: SSH-only; `start-cli package attach balanceofsatoshis`
+  - primary # displayed "Command Line"; runs `bos peers`
+  - telegram # displayed "Telegram Bot"; present only when the bot is configured
 ```
