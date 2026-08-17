@@ -4,8 +4,10 @@ Balance of Satoshis is command-line only. To use it day-to-day you connect to yo
 
 ## Documentation
 
-- [Balance of Satoshis README](https://github.com/alexbosworth/balanceofsatoshis#readme) — upstream overview, install notes, and configuration guidance.
-- [Balance of Satoshis command reference](https://github.com/alexbosworth/balanceofsatoshis/blob/master/commands/README.md) — every `bos` subcommand with flags and examples.
+- [Balance of Satoshis README](https://github.com/alexbosworth/balanceofsatoshis#readme) — upstream overview, example commands, and configuration guidance.
+- [Changelog](https://github.com/alexbosworth/balanceofsatoshis/blob/master/CHANGELOG.md) — what changed in each release, including which LND versions are supported.
+
+For any individual subcommand, `bos help <command>` in the shell is the authoritative reference — it is generated from the installed version, so it never drifts from what you are running.
 
 ## What you get on StartOS
 
@@ -30,7 +32,7 @@ There is no web interface and no network port — `bos` is reached only via SSH.
 
 ## Using Balance of Satoshis
 
-The CLI is the interface. Inside the container shell you have the full `bos` command set; the upstream command reference above is the canonical guide. The saved node is named `embassy` and is selected automatically, so you can omit `--node` from any command.
+The CLI is the interface. Inside the container shell you have the full `bos` command set — run `bos help` for the list and `bos help <command>` for one of them. The saved node is named `embassy` and is selected automatically, so you can omit `--node` from any command.
 
 ### Actions
 
@@ -48,7 +50,7 @@ The service page also exposes actions you can run from the StartOS UI without op
 
 ## Telegram bot (optional)
 
-Balance of Satoshis can run a [Telegram bot](https://github.com/alexbosworth/balanceofsatoshis/blob/master/telegram/README.md) for node notifications and commands. The whole setup is done from the service page — no shell needed:
+Balance of Satoshis can run a Telegram bot for node notifications and commands. The whole setup is done from the service page — no shell needed:
 
 1. Create a bot with [@BotFather](https://t.me/BotFather) on Telegram and copy its API token.
 2. Run the **Set Telegram API Key** action and paste the token. The bot starts running.
