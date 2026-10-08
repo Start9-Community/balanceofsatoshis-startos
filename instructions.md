@@ -36,7 +36,7 @@ The CLI is the interface. Inside the container shell you have the full `bos` com
 
 ### Actions
 
-The service page also exposes actions you can run from the StartOS UI without opening a shell. The reporting actions are quick read-only shortcuts — they are **not** a substitute for the CLI.
+The service page also exposes actions you can run from the StartOS UI without opening a shell. The reporting actions are quick read-only shortcuts — they are **not** a substitute for the CLI. Each shows the command's output in a field you can copy; the multi-line reports can also be downloaded as a text file.
 
 **Balance & Liquidity:** Show Balance, Show Inbound Liquidity, Show Outbound Liquidity, Show Report.
 
@@ -57,4 +57,4 @@ Balance of Satoshis can run a Telegram bot for node notifications and commands. 
 3. In Telegram, message your new bot `/connect`. It replies with a numeric connect code.
 4. Run the **Connect Telegram** action and paste that code.
 
-The bot then connects and **reconnects automatically after every restart** — you don't need to set it up again; your API key and connect code are saved. To turn the bot off (and keep it off across restarts without losing your saved details), run the **Enable / Disable Telegram** action; run it again to turn it back on.
+The bot then connects and **reconnects automatically after every restart** — you don't need to set it up again; your API key and connect code are saved. To turn the bot off (and keep it off across restarts without losing your saved details), run the **Enable / Disable Telegram** action and confirm; run it again to turn it back on.

@@ -71,6 +71,8 @@ const dict = {
   'Telegram Bot': 52,
   'The Telegram bot is running': 53,
   'The Telegram bot is not running': 54,
+  'The Telegram bot stops and stays off until you enable it again.': 55,
+  'The Telegram bot starts with your saved API key and connect code.': 56,
 } as const
 
 /**

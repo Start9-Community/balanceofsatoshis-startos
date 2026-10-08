@@ -57,6 +57,8 @@ export default {
     52: 'Bot de Telegram',
     53: 'El bot de Telegram esta en ejecucion',
     54: 'El bot de Telegram no esta en ejecucion',
+    55: 'El bot de Telegram se detiene y permanece apagado hasta que lo vuelvas a activar.',
+    56: 'El bot de Telegram se inicia con tu clave API y codigo de conexion guardados.',
   } satisfies LangDict,
   de_DE: {
     0: 'Balance of Satoshis wird gestartet...',
@@ -114,6 +116,8 @@ export default {
     52: 'Telegram-Bot',
     53: 'Der Telegram-Bot laeuft',
     54: 'Der Telegram-Bot laeuft nicht',
+    55: 'Der Telegram-Bot wird gestoppt und bleibt aus, bis Sie ihn wieder aktivieren.',
+    56: 'Der Telegram-Bot startet mit Ihrem gespeicherten API-Schluessel und Verbindungscode.',
   } satisfies LangDict,
   pl_PL: {
     0: 'Uruchamianie Balance of Satoshis...',
@@ -171,6 +175,8 @@ export default {
     52: 'Bot Telegram',
     53: 'Bot Telegram dziala',
     54: 'Bot Telegram nie dziala',
+    55: 'Bot Telegram zostanie zatrzymany i pozostanie wylaczony, dopoki go ponownie nie wlaczysz.',
+    56: 'Bot Telegram uruchomi sie z zapisanym kluczem API i kodem polaczenia.',
   } satisfies LangDict,
   fr_FR: {
     0: 'Demarrage de Balance of Satoshis...',
@@ -228,5 +234,7 @@ export default {
     52: 'Bot Telegram',
     53: "Le bot Telegram est en cours d'execution",
     54: "Le bot Telegram n'est pas en cours d'execution",
+    55: "Le bot Telegram s'arrete et reste eteint jusqu'a ce que vous le reactiviez.",
+    56: 'Le bot Telegram demarre avec votre cle API et votre code de connexion enregistres.',
   } satisfies LangDict,
 } as Record<string, LangDict>

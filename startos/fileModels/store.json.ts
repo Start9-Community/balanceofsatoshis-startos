@@ -15,7 +15,7 @@ import { sdk } from '../sdk'
  */
 export const storeJson = FileHelper.json(
   { base: sdk.volumes.main, subpath: '.startos/store.json' },
-  z.object({
+  z.looseObject({
     telegramConnectCode: z.string().optional().catch(undefined),
     telegramEnabled: z.boolean().optional().catch(undefined),
   }),

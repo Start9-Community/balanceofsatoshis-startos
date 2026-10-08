@@ -109,11 +109,13 @@ One, and it is required.
 
 BoS uses LND's **admin** macaroon, so every destructive operation LND offers is available to anyone who can run `bos` here. Treat shell access to this service as equivalent to full control of the node.
 
-The dependency is declared `kind: 'running'` — BoS will not start until LND is up and its health check passes.
+The dependency is declared `kind: 'running'`, so StartOS reports it unmet unless LND is running and its `lnd` health check passes.
 
 ## Network Access and Interfaces
 
 **None.** `setInterfaces` returns an empty array: the package binds no port and publishes no address, on LAN, Tor, or clearnet.
+
+The StartOS 0.3.5 package declared a `main` interface. Updating to `23.1.6:1` or later retires that leftover `main` host in the version migration, freeing its port; nothing is moved anywhere, since there is no interface to move it to.
 
 Traffic still leaves the container in two directions — gRPC to LND over the private bridge, and, if the bot is configured, outbound HTTPS to Telegram's API. Neither is an inbound interface, so there is nothing to expose or to secure at the network layer.
 
@@ -144,7 +146,7 @@ Each runs one `bos` command in a temporary container and prints its output.
 - **What they change:** nothing. The volume is mounted **read-only** for these, so they cannot write even by accident.
 - **Cost:** one container start each, seconds. All but Show Version and Show Help are `only-running`, because they need LND.
 - **Repeat safety:** fully idempotent.
-- **Output shape:** command text, HTML-escaped and wrapped in `<pre>`. StartOS renders an action result through a sanitizer that strips `style` and `class`, so wide output overflows horizontally and nothing package-side can add wrapping or a scrollbar. Prefer the shell for anything wide.
+- **Output shape:** the command's stdout in a read-only monospace field that keeps its line breaks, with a copy button and a download as `bos-<command>.txt`. Show Version is a single copyable line.
 
 ### Set Telegram API Key
 
@@ -164,7 +166,7 @@ Saves the numeric code the bot replies with. Run it after Set Telegram API Key.
 
 ### Enable / Disable Telegram
 
-One action that reads its own name from current state, so it presents as whichever the opposite of the present setting is.
+One action that reads its own name from current state, so it presents as whichever the opposite of the present setting is. It asks for confirmation before it runs, naming whether the bot stops or starts.
 
 - **Hidden until an API key exists** — there is nothing to toggle before that.
 - **What it changes:** `telegramEnabled` in the store, adding or removing the bot daemon.
@@ -201,7 +203,6 @@ A restored instance self-corrects its connection: `credentials.json` re-validate
 2. **Root inside the container, with LND's admin macaroon.** Shell access here is full control of the Lightning node.
 3. **The saved node name is fixed** as `embassy`, for backwards compatibility with the previous package generation. Additional saved nodes can be created by hand under `~/.bos/`, but the package manages only this one.
 4. **The reporting actions cover a fraction of `bos`.** They are shortcuts for common read-only commands; anything else needs the shell.
-5. **Action output cannot wrap or scroll.** StartOS's result modal strips the styling that would allow it, so wide tables overflow.
 
 ---
 
