@@ -4,6 +4,6 @@ RUN apk add --no-cache --upgrade bash
 
 ENV BOS_DEFAULT_SAVED_NODE=embassy
 
-RUN npm install -g balanceofsatoshis@23.1.6
+RUN npm install -g balanceofsatoshis@25.0.0
 
 WORKDIR /root
