@@ -31,7 +31,13 @@ export const toggleTelegram = sdk.Action.withoutInput(
         : i18n(
             'Start the Telegram bot again using your saved API key and connect code, and resume it automatically after restarts.',
           ),
-      warning: null,
+      warning: enabled
+        ? i18n(
+            'The Telegram bot stops and stays off until you enable it again.',
+          )
+        : i18n(
+            'The Telegram bot starts with your saved API key and connect code.',
+          ),
       allowedStatuses: 'only-running',
       group: i18n('Telegram'),
       visibility: apiKey ? 'enabled' : 'hidden',

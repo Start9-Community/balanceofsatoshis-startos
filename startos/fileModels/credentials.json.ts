@@ -2,7 +2,7 @@ import { FileHelper, z } from '@start9labs/start-sdk'
 import { sdk } from '../sdk'
 import { bosSavedNode, lndCertPath, lndMacaroonPath } from '../utils'
 
-const shape = z.object({
+const shape = z.looseObject({
   cert_path: z.literal(lndCertPath).catch(lndCertPath),
   macaroon_path: z.literal(lndMacaroonPath).catch(lndMacaroonPath),
   socket: z.string().optional().catch(undefined),

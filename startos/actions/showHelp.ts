@@ -1,6 +1,6 @@
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { formatBosOutput } from '../utils'
+import { bosReport } from '../utils'
 
 export const showHelp = sdk.Action.withoutInput(
   'show-help',
@@ -26,8 +26,8 @@ export const showHelp = sdk.Action.withoutInput(
     return {
       version: '1',
       title: i18n('Success'),
-      message: formatBosOutput(res.stdout),
-      result: null,
+      message: null,
+      result: bosReport(res.stdout, 'help'),
     }
   },
 )

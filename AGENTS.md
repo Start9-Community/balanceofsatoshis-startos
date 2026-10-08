@@ -18,9 +18,17 @@ Freshly scaffolded? Work the
 guide page, not a file in this repo — read it, don't copy it in.
 
 Keep `README.md` (technical reference for an AI support or administering agent) and
-`instructions.md` (end-user docs) in sync with your changes.
+`instructions.md` (end-user docs) in sync with your changes. This file restates neither:
+whoever changes the package has both, so it carries only what they don't — repo mechanics,
+a change that looks right and is not, where the next thing gets added, a naming trap, a
+build or test invocation particular to this repo.
 
-**Bugs and feature requests are GitHub issues on this repo** — file them as you find them.
+**Fix a defect you spot rather than reporting it** — you have the package open and the
+context to be sure. File **a GitHub issue on this repo** only when the call isn't yours to
+make: you can't pin the cause down, two defensible fixes exist, or it's too large to ride on
+the work in hand. An open issue is a report, not a queue — implement one when you're asked
+to or when it's labelled `Approved`, then close it with `Closes #<n>`.
+
 Don't record work in the repo instead: no `TODO.md`, no `NOTES.md`, no `PLAN.md`. What you
 verified, tried, and decided belongs in the commit message and the PR body.
 
@@ -28,5 +36,5 @@ verified, tried, and decided belongs in the commit message and the PR body.
 
 - **Import LND's host id and port from `lnd-startos/startos/interfaces`** rather than hardcoding, so a change on LND's side is a compile error here.
 - **The `telegram` daemon must stay `requires: []`.** Tying it to `primary`'s `bos peers` readiness tore the bot down and re-paired it on every transient flap; `bos telegram` tolerates LND being unreachable on its own.
-- **The saved node is `embassy` and cannot be renamed.** It is the 0.3.5.1 package's name, and existing users' backups and command snippets depend on it.
-- **`BOS_DEFAULT_SAVED_NODE` lives in the `Dockerfile`, not in `main.ts`.** The daemon is given no environment; don't document or add one without checking which side actually sets the value.
+- **Never rename the saved node `embassy`** — existing users' backups and command snippets depend on it.
+- **Set `BOS_DEFAULT_SAVED_NODE` in the `Dockerfile`, not in `main.ts`.** The daemon is given no environment; check which side sets a value before documenting or adding one.

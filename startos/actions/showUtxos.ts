@@ -1,6 +1,6 @@
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { bosHomeDir, formatBosOutput, lndMount } from '../utils'
+import { bosHomeDir, bosReport, lndMount } from '../utils'
 
 export const showUtxos = sdk.Action.withoutInput(
   'show-utxos',
@@ -39,8 +39,8 @@ export const showUtxos = sdk.Action.withoutInput(
     return {
       version: '1',
       title: i18n('Success'),
-      message: formatBosOutput(res.stdout),
-      result: null,
+      message: null,
+      result: bosReport(res.stdout, 'utxos'),
     }
   },
 )
