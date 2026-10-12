@@ -10,4 +10,6 @@ export const bosReport = (stdout: string | Buffer, command: string) => ({
   value: stdout.toString().trim(),
   copyable: true,
   filename: `bos-${command}.txt`,
+  qr: false,
+  masked: false,
 })

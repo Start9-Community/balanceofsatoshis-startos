@@ -30,6 +30,9 @@ export const showVersion = sdk.Action.withoutInput(
         type: 'single',
         value: res.stdout.toString().trim(),
         copyable: true,
+        qr: false,
+        masked: false,
+        launchable: false,
       },
     }
   },
