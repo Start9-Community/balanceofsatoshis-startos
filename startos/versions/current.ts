@@ -1,18 +1,13 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '25.0.0:1',
+  version: '25.0.0:2',
   releaseNotes: {
-    en_US:
-      'Restarting Balance of Satoshis while it is still starting stops every process of the previous run.',
-    es_ES:
-      'Reiniciar Balance of Satoshis mientras aún se está iniciando detiene todos los procesos de la ejecución anterior.',
-    de_DE:
-      'Ein Neustart von Balance of Satoshis, während es noch startet, beendet alle Prozesse des vorherigen Laufs.',
-    pl_PL:
-      'Ponowne uruchomienie Balance of Satoshis w trakcie uruchamiania zatrzymuje wszystkie procesy poprzedniego uruchomienia.',
-    fr_FR:
-      "Redémarrer Balance of Satoshis pendant son démarrage arrête tous les processus de l'exécution précédente.",
+    en_US: 'Updates Node.js to 24.22.1 with security fixes.',
+    es_ES: 'Actualiza Node.js a 24.22.1 con correcciones de seguridad.',
+    de_DE: 'Aktualisiert Node.js auf 24.22.1 mit Sicherheitskorrekturen.',
+    pl_PL: 'Aktualizuje Node.js do wersji 24.22.1 z poprawkami bezpieczeństwa.',
+    fr_FR: 'Met à jour Node.js vers 24.22.1 avec des correctifs de sécurité.',
   },
   migrations: {
     up: async ({ effects }) => {},
