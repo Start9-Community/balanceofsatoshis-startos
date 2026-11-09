@@ -50,18 +50,18 @@ One image, built here rather than pulled — upstream publishes no Docker image,
 
 **The `primary` daemon does no work.** It runs `tail -f /dev/null` purely to keep the subcontainer alive so a user can attach a shell to it; the actual functionality is whatever `bos` command they then type. Its readiness check is the useful part — see [Health Checks](#health-checks).
 
-BoS runs as **root** in the container. That is required, not incidental: LND's `admin.macaroon` is root-owned and mode `0600` on a read-only mount, so it cannot be re-permissioned from this side.
+BoS runs as **root** in the container. That is required, not incidental: LND's `admin.macaroon` is root-owned and not world-readable on a read-only mount, so it cannot be re-permissioned from this side.
 
 The image's `BOS_DEFAULT_SAVED_NODE` is baked into the `Dockerfile`, not set by StartOS — the package passes no environment to the daemon at all.
 
 ## Volume and Data Layout
 
-One volume, mounted as the container's home directory, plus a read-only view of LND's.
+One volume, mounted as the container's home directory, plus a read-only view of the `admin/` tier of LND's `public` volume.
 
-| Volume            | Mount Point | Purpose                                                        |
-| ----------------- | ----------- | -------------------------------------------------------------- |
-| `main`            | `/root`     | BoS's whole home — saved nodes, tags, notes, and package state |
-| LND's `main` (ro) | `/mnt/lnd`  | LND's TLS certificate and admin macaroon                       |
+| Volume              | Mount Point | Purpose                                                          |
+| ------------------- | ----------- | ---------------------------------------------------------------- |
+| `main`              | `/root`     | BoS's whole home — saved nodes, tags, notes, and package state   |
+| LND's `public` (ro) | `/mnt/lnd`  | Only LND's `admin/` tier: its TLS certificate and admin macaroon |
 
 Mounting `main` at `/root` is what makes BoS's own conventions work unchanged: everything it expects under `~/.bos` is on the volume, and therefore in every backup, without the package having to relocate anything.
 
@@ -103,9 +103,9 @@ An absent `telegramEnabled` counts as **enabled**, so the bot starts as soon as 
 
 One, and it is required.
 
-| Dependency | Required | Health checks required | Mounted                         | Why                      |
-| ---------- | -------- | ---------------------- | ------------------------------- | ------------------------ |
-| LND        | Yes      | `lnd`                  | `main`, read-only at `/mnt/lnd` | The node BoS operates on |
+| Dependency | Required | Health checks required | Mounted                                           | Why                      |
+| ---------- | -------- | ---------------------- | ------------------------------------------------- | ------------------------ |
+| LND        | Yes      | `lnd`                  | `public` (`admin/` tier), read-only at `/mnt/lnd` | The node BoS operates on |
 
 BoS uses LND's **admin** macaroon, so every destructive operation LND offers is available to anyone who can run `bos` here. Treat shell access to this service as equivalent to full control of the node.
 
@@ -218,7 +218,7 @@ subcontainers:
   - balanceofsatoshis-sub # both daemons
   - bos-* # one temporary container per reporting action
 volumes:
-  main: /root # BoS home; LND's main volume is mounted read-only at /mnt/lnd
+  main: /root # BoS home; LND's public admin/ tier is mounted read-only at /mnt/lnd
 file_models:
   - .bos/embassy/credentials.json
   - .bos/telegram_bot_api_key
