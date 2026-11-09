@@ -29,8 +29,8 @@ export const showBalance = sdk.Action.withoutInput(
         })
         .mountDependency({
           dependencyId: 'lnd',
-          volumeId: 'main',
-          subpath: null,
+          volumeId: 'public',
+          subpath: 'admin',
           mountpoint: lndMount,
           readonly: true,
         }),

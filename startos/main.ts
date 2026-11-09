@@ -45,8 +45,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
     })
     .mountDependency({
       dependencyId: 'lnd',
-      volumeId: 'main',
-      subpath: null,
+      volumeId: 'public',
+      subpath: 'admin',
       mountpoint: lndMount,
       readonly: true,
     })
@@ -82,8 +82,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
    * users can `start-cli package attach` in and run `bos` commands. Its
    * readiness check (`bos peers`) doubles as the LND-reachability signal.
    *
-   * BoS runs as root so it can read LND's root-owned 0600 admin.macaroon from
-   * the read-only LND volume mount.
+   * BoS runs as root so it can read LND's root-owned, non-world-readable
+   * admin.macaroon from the read-only LND mount.
    */
   const daemons = sdk.Daemons.of(effects).addDaemon('primary', {
     subcontainer: bosSub,
